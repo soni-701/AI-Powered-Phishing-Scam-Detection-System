@@ -168,6 +168,8 @@ function Home({onNavigate}) {
             onClick={()=>onNavigate('threat-reports')}
           />
 
+         
+
           <p className="mb-3 mt-8 px-3 text-[10px] font-semibold uppercase tracking-widest text-[#526B82]">
             System
           </p>
