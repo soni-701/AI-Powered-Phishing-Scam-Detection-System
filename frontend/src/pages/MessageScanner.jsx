@@ -34,18 +34,21 @@ function MessageScanner() {
   setScanning(true);
 
   try {
-    const response = await fetch(
-      "http://localhost:5000/api/scan/message",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: message.trim(),
-        }),
-      }
-    );
+    const token = localStorage.getItem("token");
+
+const response = await fetch(
+  "http://localhost:5000/api/scan/message",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      message: message.trim(),
+    }),
+  }
+);
 
     const data = await response.json();
 
@@ -83,11 +86,11 @@ function MessageScanner() {
 
   return (
     <div className="min-h-screen bg-transparent text-white">
-      <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-5 sm:py-8 lg:px-8">
 
         {/* HEADER */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-start gap-3 sm:items-center">
 
             <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#174D6E] bg-[#0D2B40]">
               <MessageSquare
@@ -97,11 +100,11 @@ function MessageScanner() {
             </div>
 
             <div>
-              <h1 className="text-3xl font-bold">
+              <h1 className="text-2xl font-bold sm:text-3xl">
                 Message Scanner
               </h1>
 
-              <p className="mt-1 text-sm text-[#607D94]">
+              <p className="mt-1 text-xs leading-5 text-[#607D94] sm:text-sm">
                 Detect phishing, scam and fraudulent messages
               </p>
             </div>
@@ -110,7 +113,7 @@ function MessageScanner() {
         </div>
 
         {/* SCANNER */}
-        <div className="rounded-2xl border border-[#1A344C] bg-[#0B1B2B]/90 p-6 shadow-xl">
+        <div className="rounded-2xl border border-[#1A344C] bg-[#0B1B2B]/90 p-4 shadow-xl sm:p-6">
 
           <div className="mb-6 flex items-center gap-3">
 
@@ -145,10 +148,10 @@ function MessageScanner() {
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Paste suspicious SMS, email or message here..."
               rows={9}
-              className="w-full resize-none rounded-xl border border-[#25445D] bg-[#081725] p-5 text-sm leading-6 text-white outline-none transition focus:border-[#42B9FF]"
+              className="w-full resize-none rounded-xl border border-[#25445D] bg-[#081725] p-4 text-sm leading-6 text-white outline-none transition focus:border-[#42B9FF] sm:p-5"
             />
 
-            <div className="absolute bottom-3 right-4 text-xs text-[#526B82]">
+            <div className="absolute bottom-3 right-3 text-[10px] text-[#526B82] sm:right-4 sm:text-xs">
               {message.length} characters
             </div>
 
@@ -168,7 +171,7 @@ function MessageScanner() {
             <button
               onClick={handleScan}
               disabled={scanning}
-              className="flex items-center justify-center gap-2 rounded-xl bg-[#FF9F43] px-7 py-4 font-bold text-[#17100A] transition hover:bg-[#FFB66B] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF9F43] px-5 py-4 font-bold text-[#17100A] transition hover:bg-[#FFB66B] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-7"
             >
               {scanning ? (
                 <>
@@ -188,7 +191,7 @@ function MessageScanner() {
 
             <button
               onClick={handleClear}
-              className="rounded-xl border border-[#25445D] px-7 py-4 font-semibold text-[#A7BAC9] transition hover:bg-[#102A43] hover:text-white"
+              className="w-full rounded-xl border border-[#25445D] px-5 py-4 font-semibold text-[#A7BAC9] transition hover:bg-[#102A43] hover:text-white sm:w-auto sm:px-7"
             >
               Clear
             </button>
@@ -227,7 +230,7 @@ function MessageScanner() {
             {/* RESULT TITLE */}
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-start gap-3 sm:items-center">
 
                 <div
                   className={`flex h-12 w-12 items-center justify-center rounded-xl ${
@@ -261,7 +264,7 @@ function MessageScanner() {
                     Scan Result
                   </p>
 
-                  <h2 className="text-xl font-bold">
+                  <h2 className="text-lg font-bold sm:text-xl">
                     {result.dangerous
                       ? "Potential Scam Detected"
                       : result.score >= 30
@@ -291,10 +294,10 @@ function MessageScanner() {
                   Risk Score
                 </p>
 
-                <div className="flex items-center gap-6">
+                <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-6">
 
                   <div
-                    className={`flex h-36 w-36 shrink-0 items-center justify-center rounded-full border-[12px] ${
+                    className={`flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-[10px] sm:h-36 sm:w-36 sm:border-[12px] ${
                       result.dangerous
                         ? "border-[#FF4D5E]/30"
                         : result.score >= 30
@@ -305,7 +308,7 @@ function MessageScanner() {
 
                     <div className="text-center">
 
-                      <p className="text-4xl font-extrabold">
+                      <p className="text-3xl font-extrabold sm:text-4xl">
                         {result.score}
                       </p>
 
@@ -353,7 +356,7 @@ function MessageScanner() {
 
                 <div className="rounded-xl border border-[#25445D] bg-[#0B1B2B] p-5">
 
-                  <p className="text-2xl font-bold text-[#42B9FF]">
+                  <p className="break-words text-xl font-bold text-[#42B9FF] sm:text-2xl">
                     {result.category}
                   </p>
 
@@ -416,38 +419,20 @@ function MessageScanner() {
 
             </div>
 
-            {/* DEMO NOTICE */}
-            <div className="mt-5 rounded-lg border border-[#49351E] bg-[#241B12] p-4">
-
-              <div className="flex gap-3">
-
-                <AlertTriangle
+            {/* BACKEND NOTICE */}
+            <div className="mt-5 rounded-lg border border-[#174D6E] bg-[#0D2B40] p-4">
+              <div className="flex items-start gap-3">
+                <Shield
                   size={18}
-                  className="mt-0.5 shrink-0 text-[#FF9F43]"
+                  className="mt-0.5 shrink-0 text-[#42B9FF]"
                 />
 
-                <p className="text-xs leading-5 text-[#B5A18A]">
-                  <div className="mt-5 rounded-lg border border-[#174D6E] bg-[#0D2B40] p-4">
-  <div className="flex gap-3">
-
-    <Shield
-      size={18}
-      className="mt-0.5 shrink-0 text-[#42B9FF]"
-    />
-
-    <p className="text-xs leading-5 text-[#8BA0B2]">
-      Analysis completed by the backend threat detection engine.
-      Results are based on detected scam and phishing indicators.
-    </p>
-
-  </div>
-</div>
+                <p className="text-xs leading-5 text-[#8BA0B2]">
+                  Analysis completed by the backend threat detection engine.
+                  Results are based on detected scam and phishing indicators.
                 </p>
-
               </div>
-
             </div>
-
           </div>
         )}
 

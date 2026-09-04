@@ -20,10 +20,94 @@ import {
   X,
 } from "lucide-react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-function Home({onNavigate}) {
+function Home({ onNavigate, onLogout }) {
   const [mobileMenu, setMobileMenu] = useState(false);
+
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const savedUser = JSON.parse(
+  localStorage.getItem("user") || "{}"
+);
+
+const userName = savedUser.name || "User";
+
+const userInitials = userName
+  .split(" ")
+  .filter(Boolean)
+  .map((name) => name[0])
+  .join("")
+  .slice(0, 2)
+  .toUpperCase();
+
+  const [analytics, setAnalytics] = useState({
+    totalScans: 0,
+    threatsDetected: 0,
+    suspiciousScans: 0,
+    safeScans: 0,
+    averageRisk: 0,
+
+    riskDistribution: {
+      safe: 0,
+      suspicious: 0,
+      highRisk: 0,
+    },
+
+    recentScans: [],
+
+    dailyActivity: [],
+  });
+
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const response = await fetch(
+          "http://localhost:5000/api/analytics",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Unable to fetch analytics."
+          );
+        }
+
+        setAnalytics(data.analytics);
+      } catch (error) {
+        console.error("Home Analytics Error:", error);
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, []);
+
+  /*
+  =========================================================
+  DETECTION ACTIVITY GRAPH
+  =========================================================
+  */
+
+  const activityData = analytics.dailyActivity || [];
+
+  const maxActivity = Math.max(
+    ...activityData.map((day) =>
+      Math.max(day.safe || 0, day.threats || 0)
+    ),
+    1
+  );
 
   return (
     <div className="min-h-screen bg-transparent text-white">
@@ -35,16 +119,21 @@ function Home({onNavigate}) {
 
           <div className="flex items-center justify-between border-b border-[#172D44] p-5">
 
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
 
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#102A43]">
-                <Shield className="text-[#42B9FF]" size={22} />
+                <Shield
+                  className="text-[#42B9FF]"
+                  size={22}
+                />
               </div>
 
               <div>
                 <h1 className="font-bold">
                   ScamShield{" "}
-                  <span className="text-[#FF9F43]">AI</span>
+                  <span className="text-[#FF9F43]">
+                    AI
+                  </span>
                 </h1>
 
                 <p className="text-[9px] uppercase tracking-widest text-[#607D94]">
@@ -66,40 +155,71 @@ function Home({onNavigate}) {
           <div className="space-y-3 p-5">
 
             <MobileNav
-              icon={<LayoutDashboard size={19} />}
-              text="Dashboard"
-            />
+  icon={<LayoutDashboard size={19} />}
+  text="Dashboard"
+  onClick={() => {
+    setMobileMenu(false);
+    onNavigate("home");
+  }}
+/>
 
-            <MobileNav
-              icon={<LinkIcon size={19} />}
-              text="URL Scanner"
-            />
+<MobileNav
+  icon={<LinkIcon size={19} />}
+  text="URL Scanner"
+  onClick={() => {
+    setMobileMenu(false);
+    onNavigate("url-scanner");
+  }}
+/>
 
-            <MobileNav
-              icon={<MessageSquareWarning size={19} />}
-              text="Message Scanner"
-            />
+<MobileNav
+  icon={<MessageSquareWarning size={19} />}
+  text="Message Scanner"
+  onClick={() => {
+    setMobileMenu(false);
+    onNavigate("message-scanner");
+  }}
+/>
 
-            <MobileNav
-              icon={<BarChart3 size={19} />}
-              text="Analytics"
-            />
+<MobileNav
+  icon={<BarChart3 size={19} />}
+  text="Analytics"
+  onClick={() => {
+    setMobileMenu(false);
+    onNavigate("analytics");
+  }}
+/>
 
-            <MobileNav
-              icon={<ShieldAlert size={19} />}
-              text="Threat Reports"
-            />
+<MobileNav
+  icon={<ShieldAlert size={19} />}
+  text="Threat Reports"
+  onClick={() => {
+    setMobileMenu(false);
+    onNavigate("threat-reports");
+  }}
+/>
 
-            <MobileNav
-              icon={<Settings size={19} />}
-              text="Settings"
-            />
+<MobileNav
+  icon={<Users size={19} />}
+  text="Users"
+  onClick={() => {
+    setMobileMenu(false);
+    onNavigate("users");
+  }}
+/>
 
+<MobileNav
+  icon={<Settings size={19} />}
+  text="Settings"
+  onClick={() => {
+    setMobileMenu(false);
+    onNavigate("settings");
+  }}
+/>
           </div>
 
         </div>
       )}
-
 
       {/* ================= SIDEBAR ================= */}
 
@@ -108,10 +228,12 @@ function Home({onNavigate}) {
         <div className="flex h-20 items-center gap-3 border-b border-[#172D44] px-6">
 
           <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#235174] bg-[#102A43]">
+
             <Shield
               className="text-[#42B9FF]"
               size={22}
             />
+
           </div>
 
           <div>
@@ -131,7 +253,6 @@ function Home({onNavigate}) {
 
         </div>
 
-
         <div className="p-4">
 
           <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-[#526B82]">
@@ -147,28 +268,26 @@ function Home({onNavigate}) {
           <SidebarItem
             icon={<LinkIcon size={18} />}
             text="URL Scanner"
-            onClick={()=>onNavigate('url-scanner')}
+            onClick={() => onNavigate("url-scanner")}
           />
 
           <SidebarItem
             icon={<MessageSquareWarning size={18} />}
             text="Message Scanner"
-            onClick={()=>onNavigate("message-scanner")}
+            onClick={() => onNavigate("message-scanner")}
           />
 
           <SidebarItem
             icon={<BarChart3 size={18} />}
             text="Analytics"
-            onClick={()=>onNavigate('analytics')}
+            onClick={() => onNavigate("analytics")}
           />
 
           <SidebarItem
             icon={<ShieldAlert size={18} />}
             text="Threat Reports"
-            onClick={()=>onNavigate('threat-reports')}
+            onClick={() => onNavigate("threat-reports")}
           />
-
-         
 
           <p className="mb-3 mt-8 px-3 text-[10px] font-semibold uppercase tracking-widest text-[#526B82]">
             System
@@ -177,17 +296,16 @@ function Home({onNavigate}) {
           <SidebarItem
             icon={<Users size={18} />}
             text="Users"
-            onClick={()=>onNavigate('users')}
+            onClick={() => onNavigate("users")}
           />
 
           <SidebarItem
             icon={<Settings size={18} />}
             text="Settings"
-             onClick={() => onNavigate("settings")}
+            onClick={() => onNavigate("settings")}
           />
 
         </div>
-
 
         <div className="absolute bottom-5 left-4 right-4 rounded-xl border border-[#1B354E] bg-[#0C1D2E] p-4">
 
@@ -209,16 +327,15 @@ function Home({onNavigate}) {
 
       </aside>
 
-
       {/* ================= MAIN ================= */}
 
       <main className="lg:ml-64">
 
         {/* ================= TOP BAR ================= */}
 
-        <header className="flex h-20 items-center justify-between border-b border-[#172D44] bg-[#091624] px-5 lg:px-8">
+        <header className="flex min-h-20 items-center justify-between border-b border-[#172D44] bg-[#091624] px-3 py-3 sm:px-5 lg:h-20 lg:px-8 lg:py-0">
 
-          <div className="flex items-center gap-4">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-4">
 
             <button
               onClick={() => setMobileMenu(true)}
@@ -235,7 +352,7 @@ function Home({onNavigate}) {
 
               <div className="flex items-center gap-2">
 
-                <h2 className="text-lg font-bold">
+                <h2 className="text-base font-bold sm:text-lg">
                   Threat Detection
                 </h2>
 
@@ -249,7 +366,6 @@ function Home({onNavigate}) {
             </div>
 
           </div>
-
 
           <div className="flex items-center gap-3">
 
@@ -268,30 +384,179 @@ function Home({onNavigate}) {
 
             </div>
 
+           <div className="relative">
 
-            <button className="relative rounded-lg border border-[#1B354E] bg-[#0C1D2E] p-2.5">
+  <button
+    onClick={() =>
+      setShowNotifications(!showNotifications)
+    }
+    className="relative rounded-lg border border-[#1B354E] bg-[#0C1D2E] p-2.5 transition hover:bg-[#102A43]"
+  >
 
-              <Bell size={18} />
+    <Bell size={18} />
 
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#FF4D5E]" />
+    {analytics.recentScans?.some(
+      (scan) => scan.score >= 60
+    ) && (
+      <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#FF4D5E]" />
+    )}
 
-            </button>
+  </button>
 
+  {/* ================= NOTIFICATION PANEL ================= */}
 
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#17344D] text-sm font-bold">
-              SA
+  {showNotifications && (
+
+    <div className="fixed left-4 right-4 top-24 z-[100] w-auto max-w-none overflow-hidden rounded-xl border border-[#1A344C] bg-[#091624] shadow-2xl lg:absolute lg:left-auto lg:right-0 lg:top-12 lg:w-80 lg:max-w-80">
+      {/* Header */}
+
+      <div className="flex items-center justify-between border-b border-[#17344D] px-4 py-3">
+
+        <div>
+
+          <p className="text-sm font-bold">
+            Notifications
+          </p>
+
+          <p className="text-[10px] text-[#607D94]">
+            Recent security alerts
+          </p>
+
+        </div>
+
+        <Bell
+          size={16}
+          className="text-[#42B9FF]"
+        />
+
+      </div>
+
+      {/* Notifications */}
+
+      <div className="max-h-80 overflow-y-auto">
+
+        {analytics.recentScans &&
+        analytics.recentScans.filter(
+          (scan) => scan.score >= 60
+        ).length > 0 ? (
+
+          analytics.recentScans
+            .filter((scan) => scan.score >= 60)
+            .map((scan) => (
+
+             <div
+                 key={scan._id}
+                 onClick={() => {
+                setShowNotifications(false);
+               onNavigate("threat-reports");
+                 }}
+              className="cursor-pointer border-b border-[#142C42] px-4 py-3 transition hover:bg-[#0D2133]"
+        >
+
+                <div className="flex gap-3">
+
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3A1720]">
+
+                    <AlertTriangle
+                      size={15}
+                      className="text-[#FF4D5E]"
+                    />
+
+                  </div>
+
+                  <div className="min-w-0">
+
+                    <p className="text-xs font-semibold text-white">
+                      {scan.type === "URL"
+                        ? "Phishing URL detected"
+                        : "Scam message detected"}
+                    </p>
+
+                    <p className="mt-1 truncate text-[10px] text-[#607D94]">
+                      {scan.category}
+                    </p>
+
+                    <p className="mt-1 text-[9px] text-[#526B82]">
+                      Risk Score: {scan.score}
+                    </p>
+
+                    <p className="mt-1 text-[9px] text-[#526B82]">
+                      {new Date(
+                        scan.createdAt
+                      ).toLocaleString([], {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            ))
+
+        ) : (
+
+          <div className="px-4 py-8 text-center">
+
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#0B3028]">
+
+              <ShieldCheck
+                size={20}
+                className="text-[#32D583]"
+              />
+
+            </div>
+
+            <p className="text-xs font-semibold">
+              No new threats
+            </p>
+
+            <p className="mt-1 text-[10px] text-[#607D94]">
+              Your recent scans look safe.
+            </p>
+
+          </div>
+
+        )}
+
+      </div>
+
+    </div>
+
+  )}
+
+</div>
+
+            <div className="flex items-center gap-2">
+
+              <div 
+              title={userName}
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#17344D] text-sm font-bold">
+                {userInitials}
+              </div>
+
+              <button
+  onClick={onLogout}
+  className="rounded-xl border border-[#FF4D5E] bg-[#3A1720] px-3 py-2.5 text-xs font-bold text-[#FF4D5E] transition hover:bg-[#4A1B25] sm:px-5 sm:text-sm"
+>
+  <span className="sm:hidden">↪</span>
+  <span className="hidden sm:inline">Logout</span>
+</button>
+
             </div>
 
           </div>
 
         </header>
 
-
         {/* ==================================================
             HOME HERO
         ================================================== */}
 
-        <section className="relative min-h-[680px] overflow-hidden">
+        <section className="relative min-h-[600px] sm:min-h-[680px] overflow-hidden">
 
           {/* BACKGROUND IMAGE */}
 
@@ -303,26 +568,21 @@ function Home({onNavigate}) {
             }}
           />
 
-
           {/* DARK OVERLAY */}
 
           <div className="absolute inset-0 bg-[#07111F]/65" />
-
 
           {/* BLUE GLOW */}
 
           <div className="absolute -right-40 top-10 h-[450px] w-[450px] rounded-full bg-[#42B9FF]/10 blur-[100px]" />
 
-
           {/* RED GLOW */}
 
           <div className="absolute -left-40 bottom-0 h-[450px] w-[450px] rounded-full bg-[#FF4D5E]/10 blur-[100px]" />
 
-
           {/* HERO CONTENT */}
 
-          <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-12 px-6 py-20 lg:grid-cols-2 lg:py-28">
-
+          <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-10 px-4 py-10 sm:gap-12 sm:px-6 sm:py-16 lg:py-28 lg:grid-cols-2 ">
 
             {/* ================= LEFT ================= */}
 
@@ -338,10 +598,9 @@ function Home({onNavigate}) {
 
               </div>
 
-
               {/* Heading */}
 
-              <h1 className="max-w-3xl text-5xl font-extrabold leading-[1.05] tracking-tight md:text-6xl">
+              <h1 className="text-3xl font-black leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
 
                 Detect Phishing
 
@@ -355,30 +614,29 @@ function Home({onNavigate}) {
 
               </h1>
 
-
               {/* Description */}
 
-              <p className="mt-7 max-w-xl text-lg leading-8 text-[#D0DAE3]">
-
+              <p className="mt-5 text-base leading-7 text-[#C4D5E5] sm:mt-6 sm:text-lg sm:leading-8">
                 Protect yourself from suspicious links, fake websites,
                 scam messages and online fraud with AI-powered threat
                 detection.
 
               </p>
 
-
               {/* Buttons */}
 
-              <div className="mt-9 flex flex-wrap gap-4">
+              <div className="mt-8 flex flex-col gap-3 sm:mt-9 sm:flex-row sm:flex-wrap sm:gap-4">
 
-                <button className="flex items-center gap-2 rounded-xl bg-[#FF9F43] px-7 py-4 font-bold text-[#17100A] shadow-lg transition hover:bg-[#FFB66B]">
+                <button
+                  onClick={() => onNavigate("url-scanner")}
+                  className="flex items-center gap-2 rounded-xl bg-[#FF9F43] px-7 py-4 font-bold text-[#17100A] shadow-lg transition hover:bg-[#FFB66B]"
+                >
 
                   <Search size={18} />
 
                   Start Scanning
 
                 </button>
-
 
                 <button className="rounded-xl border border-white/30 bg-[#07111F]/60 px-7 py-4 font-bold text-white backdrop-blur-md transition hover:bg-white/10">
 
@@ -387,7 +645,6 @@ function Home({onNavigate}) {
                 </button>
 
               </div>
-
 
               {/* Features */}
 
@@ -403,7 +660,6 @@ function Home({onNavigate}) {
 
                 </div>
 
-
                 <div className="flex items-center gap-2">
 
                   <span className="text-[#32D583]">
@@ -413,7 +669,6 @@ function Home({onNavigate}) {
                   Real-time Risk Score
 
                 </div>
-
 
                 <div className="flex items-center gap-2">
 
@@ -429,13 +684,11 @@ function Home({onNavigate}) {
 
             </div>
 
-
             {/* ================= RIGHT ================= */}
 
             <div className="relative">
 
               <div className="rounded-2xl border border-[#31516D] bg-[#07111F]/85 p-5 shadow-2xl backdrop-blur-md">
-
 
                 {/* Card Header */}
 
@@ -452,7 +705,6 @@ function Home({onNavigate}) {
 
                     </div>
 
-
                     <div>
 
                       <p className="font-bold">
@@ -460,13 +712,12 @@ function Home({onNavigate}) {
                       </p>
 
                       <p className="text-xs text-[#607D94]">
-                        AI Threat Analysis
+                        Based on your recent scans
                       </p>
 
                     </div>
 
                   </div>
-
 
                   <div className="flex items-center gap-2 text-xs text-[#32D583]">
 
@@ -478,23 +729,42 @@ function Home({onNavigate}) {
 
                 </div>
 
-
                 {/* Score */}
 
                 <div className="flex justify-center py-8">
 
-                  <div className="relative flex h-48 w-48 items-center justify-center rounded-full border-[14px] border-[#FF4D5E]/20">
+                  <div className="relative flex h-40 w-40 items-center justify-center rounded-full border-[10px] sm:h-48 sm:w-48 sm:border-[14px] border-[#FF4D5E]/20">
 
                     <div className="absolute -inset-3 rounded-full border-[12px] border-transparent border-t-[#42B9FF] border-r-[#FF4D5E] rotate-[-35deg]" />
 
                     <div className="text-center">
 
-                      <p className="text-6xl font-extrabold">
-                        92
+                      <p className="text-5xl font-extrabold sm:text-6xl">
+
+                        {analyticsLoading
+                          ? "..."
+                          : analytics.averageRisk}
+
                       </p>
 
-                      <p className="mt-1 text-xs font-bold uppercase tracking-widest text-[#FF4D5E]">
-                        High Risk
+                      <p
+                        className={`mt-1 text-xs font-bold uppercase tracking-widest ${
+                          analytics.averageRisk >= 60
+                            ? "text-[#FF4D5E]"
+                            : analytics.averageRisk >= 30
+                            ? "text-[#FF9F43]"
+                            : "text-[#32D583]"
+                        }`}
+                      >
+
+                        {analyticsLoading
+                          ? "Loading"
+                          : analytics.averageRisk >= 60
+                          ? "High Risk"
+                          : analytics.averageRisk >= 30
+                          ? "Suspicious"
+                          : "Safe"}
+
                       </p>
 
                     </div>
@@ -503,33 +773,49 @@ function Home({onNavigate}) {
 
                 </div>
 
-
                 {/* Risk boxes */}
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
 
                   <RiskBox
-                    value="09"
-                    label="Critical"
+                    value={
+                      analyticsLoading
+                        ? "..."
+                        : String(
+                            analytics.riskDistribution.highRisk
+                          ).padStart(2, "0")
+                    }
+                    label="High Risk"
                     type="red"
                   />
 
                   <RiskBox
-                    value="17"
-                    label="High Risk"
+                    value={
+                      analyticsLoading
+                        ? "..."
+                        : String(
+                            analytics.riskDistribution.suspicious
+                          ).padStart(2, "0")
+                    }
+                    label="Suspicious"
                     type="orange"
                   />
 
                   <RiskBox
-                    value="28"
-                    label="Suspicious"
+                    value={
+                      analyticsLoading
+                        ? "..."
+                        : String(
+                            analytics.riskDistribution.safe
+                          ).padStart(2, "0")
+                    }
+                    label="Safe"
                     type="blue"
                   />
 
                 </div>
 
               </div>
-
 
               {/* Floating status */}
 
@@ -568,12 +854,11 @@ function Home({onNavigate}) {
 
         </section>
 
-
         {/* ==================================================
             SECURITY OVERVIEW
         ================================================== */}
 
-        <section className="bg-transparent px-5 py-10 lg:px-8">
+        <section className="bg-transparent px-4 py-8 sm:px-5 sm:py-10 lg:px-8">
 
           <div className="mx-auto max-w-7xl">
 
@@ -597,51 +882,65 @@ function Home({onNavigate}) {
 
             </div>
 
-
             {/* STAT CARDS */}
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 
               <StatCard
                 title="Total Scans"
-                value="12,486"
-                change="+18.4%"
+                value={
+                  analyticsLoading
+                    ? "..."
+                    : analytics.totalScans
+                }
+                change="Live"
                 icon={<Target size={21} />}
                 type="blue"
               />
 
               <StatCard
                 title="Threats Detected"
-                value="1,284"
-                change="+12.7%"
+                value={
+                  analyticsLoading
+                    ? "..."
+                    : analytics.threatsDetected
+                }
+                change="Live"
                 icon={<ShieldAlert size={21} />}
                 type="red"
               />
 
               <StatCard
                 title="Safe Content"
-                value="10,742"
-                change="+8.2%"
+                value={
+                  analyticsLoading
+                    ? "..."
+                    : analytics.safeScans
+                }
+                change="Live"
                 icon={<ShieldCheck size={21} />}
                 type="green"
               />
 
               <StatCard
-                title="AI Accuracy"
-                value="96.8%"
-                change="+2.1%"
+                title="Average Risk"
+                value={
+                  analyticsLoading
+                    ? "..."
+                    : `${analytics.averageRisk}%`
+                }
+                change="Live"
                 icon={<Bot size={21} />}
                 type="orange"
               />
 
             </div>
 
-
             {/* THREAT + RISK */}
 
             <div className="mt-5 grid gap-5 xl:grid-cols-3">
 
-              <div className="rounded-xl border border-[#1A344C] bg-[#0B1B2B]/90/90 xl:col-span-2">
+              <div className="rounded-xl border border-[#1A344C] bg-[#0B1B2B]/90 xl:col-span-2">
 
                 <PanelHeader
                   title="Top Threat Alerts"
@@ -650,40 +949,44 @@ function Home({onNavigate}) {
 
                 <div className="p-4">
 
-                  <ThreatRow
-                    title="Phishing URL detected"
-                    source="Suspicious domain"
-                    severity="Critical"
-                    time="1 min ago"
-                    critical
-                  />
+                  {analytics.recentScans &&
+                  analytics.recentScans.filter(
+                    (scan) => scan.score >= 60
+                  ).length > 0 ? (
 
-                  <ThreatRow
-                    title="Credential harvesting attempt"
-                    source="Fake login page"
-                    severity="Critical"
-                    time="3 min ago"
-                    critical
-                  />
+                    analytics.recentScans
+                      .filter((scan) => scan.score >= 60)
+                      .map((scan) => (
+                        <ThreatRow
+                          key={scan._id}
+                          title={
+                            scan.type === "URL"
+                              ? "Phishing URL detected"
+                              : "Scam message detected"
+                          }
+                          source={scan.category}
+                          severity={scan.level}
+                          time={new Date(
+                            scan.createdAt
+                          ).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                          critical
+                        />
+                      ))
 
-                  <ThreatRow
-                    title="Suspicious payment message"
-                    source="Financial scam"
-                    severity="High"
-                    time="7 min ago"
-                  />
+                  ) : (
 
-                  <ThreatRow
-                    title="Malicious shortened URL"
-                    source="Unknown redirect"
-                    severity="High"
-                    time="11 min ago"
-                  />
+                    <p className="py-6 text-center text-xs text-[#607D94]">
+                      No high-risk threats detected recently.
+                    </p>
+
+                  )}
 
                 </div>
 
               </div>
-
 
               {/* RISK */}
 
@@ -705,11 +1008,31 @@ function Home({onNavigate}) {
                       <div className="text-center">
 
                         <p className="text-5xl font-extrabold">
-                          92
+
+                          {analyticsLoading
+                            ? "..."
+                            : analytics.averageRisk}
+
                         </p>
 
-                        <p className="text-xs uppercase tracking-widest text-[#FF4D5E]">
-                          Critical
+                        <p
+                          className={`text-xs uppercase tracking-widest ${
+                            analytics.averageRisk >= 60
+                              ? "text-[#FF4D5E]"
+                              : analytics.averageRisk >= 30
+                              ? "text-[#FF9F43]"
+                              : "text-[#32D583]"
+                          }`}
+                        >
+
+                          {analyticsLoading
+                            ? "Loading"
+                            : analytics.averageRisk >= 60
+                            ? "High Risk"
+                            : analytics.averageRisk >= 30
+                            ? "Suspicious"
+                            : "Safe"}
+
                         </p>
 
                       </div>
@@ -718,24 +1041,35 @@ function Home({onNavigate}) {
 
                   </div>
 
-
                   <div className="space-y-3">
 
                     <RiskItem
-                      label="Critical Threats"
-                      value="9"
+                      label="High Risk"
+                      value={
+                        analyticsLoading
+                          ? "..."
+                          : analytics.riskDistribution.highRisk
+                      }
                       color="red"
                     />
 
                     <RiskItem
-                      label="High Risks"
-                      value="17"
+                      label="Suspicious"
+                      value={
+                        analyticsLoading
+                          ? "..."
+                          : analytics.riskDistribution.suspicious
+                      }
                       color="orange"
                     />
 
                     <RiskItem
-                      label="Suspicious Items"
-                      value="28"
+                      label="Safe"
+                      value={
+                        analyticsLoading
+                          ? "..."
+                          : analytics.riskDistribution.safe
+                      }
                       color="yellow"
                     />
 
@@ -747,8 +1081,9 @@ function Home({onNavigate}) {
 
             </div>
 
-
-            {/* DETECTION ACTIVITY */}
+            {/* ==================================================
+                DETECTION ACTIVITY
+            ================================================== */}
 
             <div className="mt-5 grid gap-5 xl:grid-cols-3">
 
@@ -766,63 +1101,138 @@ function Home({onNavigate}) {
                     <div>
 
                       <p className="text-2xl font-bold">
-                        1,284
+
+                        {analyticsLoading
+                          ? "..."
+                          : analytics.totalScans}
+
                       </p>
 
                       <p className="text-xs text-[#607D94]">
-                        threats detected this month
+                        total scans
                       </p>
 
                     </div>
 
                     <div className="rounded-md border border-[#145A47] bg-[#0C3027] px-2 py-1 text-xs font-semibold text-[#32D583]">
-                      +14.8%
+                      LAST 7 DAYS
                     </div>
 
                   </div>
 
+                  {/* REAL ACTIVITY GRAPH */}
 
                   <div className="relative h-52 overflow-hidden rounded-lg border border-[#142C42] bg-[#081725]">
 
+                    {/* Grid */}
+
                     <div className="absolute inset-0 bg-[linear-gradient(#17344D_1px,transparent_1px),linear-gradient(90deg,#17344D_1px,transparent_1px)] bg-[size:60px_40px] opacity-40" />
 
-                    <svg
-                      viewBox="0 0 800 220"
-                      className="absolute inset-0 h-full w-full"
-                      preserveAspectRatio="none"
-                    >
+                    {activityData.length > 0 ? (
 
-                      <path
-                        d="M0 180 C80 165 90 140 150 155 S230 120 280 145 S350 100 410 125 S500 80 550 115 S650 70 700 90 S760 55 800 70"
-                        fill="none"
-                        stroke="#42B9FF"
-                        strokeWidth="4"
-                      />
+                      <div className="absolute inset-x-4 bottom-10 top-5 flex items-end justify-between gap-2">
 
-                      <path
-                        d="M0 195 C80 185 110 175 160 185 S240 155 300 175 S390 145 440 160 S530 125 590 150 S670 105 730 135 S770 110 800 120"
-                        fill="none"
-                        stroke="#FF4D5E"
-                        strokeWidth="3"
-                      />
+                        {activityData.map((day) => {
 
-                    </svg>
+                          const safeHeight =
+                            ((day.safe || 0) /
+                              maxActivity) *
+                            100;
 
+                          const threatHeight =
+                            ((day.threats || 0) /
+                              maxActivity) *
+                            100;
 
-                    <div className="absolute bottom-3 left-4 right-4 flex justify-between text-[10px] text-[#526B82]">
+                          return (
+                            <div
+                              key={day.date}
+                              className="flex h-full flex-1 items-end justify-center gap-1"
+                            >
 
-                      <span>00:00</span>
-                      <span>04:00</span>
-                      <span>08:00</span>
-                      <span>12:00</span>
-                      <span>16:00</span>
-                      <span>20:00</span>
-                      <span>24:00</span>
+                              {/* Safe */}
+
+                              <div
+                                title={`Safe: ${day.safe || 0}`}
+                                className="w-2 rounded-t bg-[#42B9FF] sm:w-3 transition-all duration-500"
+                                style={{
+                                  height: `${Math.max(
+                                    safeHeight,
+                                    day.safe > 0 ? 5 : 0
+                                  )}%`,
+                                }}
+                              />
+
+                              {/* Threat */}
+
+                              <div
+                                title={`Threats: ${day.threats || 0}`}
+                                className="w-2 rounded-t bg-[#FF4D5E] sm:w-3 transition-all duration-500"
+                                style={{
+                                  height: `${Math.max(
+                                    threatHeight,
+                                    day.threats > 0 ? 5 : 0
+                                  )}%`,
+                                }}
+                              />
+
+                            </div>
+                          );
+                        })}
+
+                      </div>
+
+                    ) : (
+
+                      <div className="absolute inset-0 flex items-center justify-center">
+
+                        <p className="text-xs text-[#607D94]">
+                          No scan activity available yet.
+                        </p>
+
+                      </div>
+
+                    )}
+
+                    {/* Dates */}
+
+                    <div className="absolute bottom-3 left-4 right-4 flex justify-between text-[9px] text-[#526B82]">
+
+                      {activityData.length > 0 ? (
+
+                        activityData.map((day) => {
+
+                          const date = new Date(
+                            `${day.date}T00:00:00`
+                          );
+
+                          return (
+                            <span key={day.date}>
+                              {date.toLocaleDateString([], {
+                                day: "2-digit",
+                                month: "short",
+                              })}
+                            </span>
+                          );
+                        })
+
+                      ) : (
+
+                        <>
+                          <span>Day 1</span>
+                          <span>Day 2</span>
+                          <span>Day 3</span>
+                          <span>Day 4</span>
+                          <span>Day 5</span>
+                          <span>Day 6</span>
+                          <span>Day 7</span>
+                        </>
+
+                      )}
 
                     </div>
 
                   </div>
-
 
                   <div className="mt-4 flex gap-5 text-xs">
 
@@ -833,7 +1243,6 @@ function Home({onNavigate}) {
                       Safe Scans
 
                     </div>
-
 
                     <div className="flex items-center gap-2">
 
@@ -848,7 +1257,6 @@ function Home({onNavigate}) {
                 </div>
 
               </div>
-
 
               {/* RECENT SCANS */}
 
@@ -883,39 +1291,48 @@ function Home({onNavigate}) {
 
                     </thead>
 
-
                     <tbody>
 
-                      <RecentScan
-                        type="Phishing URL"
-                        risk="92"
-                        time="1m"
-                      />
+                      {analytics.recentScans &&
+                      analytics.recentScans.length > 0 ? (
 
-                      <RecentScan
-                        type="Scam Message"
-                        risk="87"
-                        time="3m"
-                      />
+                        analytics.recentScans.map((scan) => (
 
-                      <RecentScan
-                        type="Safe URL"
-                        risk="08"
-                        time="5m"
-                        safe
-                      />
+                          <RecentScan
+                            key={scan._id}
+                            type={
+                              scan.type === "URL"
+                                ? "URL Scan"
+                                : "Message Scan"
+                            }
+                            risk={String(
+                              scan.score
+                            ).padStart(2, "0")}
+                            time={new Date(
+                              scan.createdAt
+                            ).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                            safe={scan.score < 30}
+                          />
 
-                      <RecentScan
-                        type="Fake Login"
-                        risk="96"
-                        time="8m"
-                      />
+                        ))
 
-                      <RecentScan
-                        type="Suspicious URL"
-                        risk="74"
-                        time="12m"
-                      />
+                      ) : (
+
+                        <tr>
+
+                          <td
+                            colSpan="3"
+                            className="px-4 py-6 text-center text-[#607D94]"
+                          >
+                            No recent scans available.
+                          </td>
+
+                        </tr>
+
+                      )}
 
                     </tbody>
 
@@ -927,11 +1344,9 @@ function Home({onNavigate}) {
 
             </div>
 
-
             {/* BOTTOM CARDS */}
 
             <div className="mt-5 grid gap-5 lg:grid-cols-3">
-
 
               {/* THREAT DISTRIBUTION */}
 
@@ -945,37 +1360,77 @@ function Home({onNavigate}) {
                 <div className="space-y-5 p-5">
 
                   <ProgressItem
-                    label="Phishing URLs"
-                    value="48%"
-                    percentage={48}
+                    label="High Risk"
+                    value={
+                      analytics.totalScans > 0
+                        ? `${Math.round(
+                            (analytics.riskDistribution.highRisk /
+                              analytics.totalScans) *
+                              100
+                          )}%`
+                        : "0%"
+                    }
+                    percentage={
+                      analytics.totalScans > 0
+                        ? Math.round(
+                            (analytics.riskDistribution.highRisk /
+                              analytics.totalScans) *
+                              100
+                          )
+                        : 0
+                    }
                     color="bg-[#FF4D5E]"
                   />
 
                   <ProgressItem
-                    label="Financial Scams"
-                    value="27%"
-                    percentage={27}
+                    label="Suspicious"
+                    value={
+                      analytics.totalScans > 0
+                        ? `${Math.round(
+                            (analytics.riskDistribution.suspicious /
+                              analytics.totalScans) *
+                              100
+                          )}%`
+                        : "0%"
+                    }
+                    percentage={
+                      analytics.totalScans > 0
+                        ? Math.round(
+                            (analytics.riskDistribution.suspicious /
+                              analytics.totalScans) *
+                              100
+                          )
+                        : 0
+                    }
                     color="bg-[#FF9F43]"
                   />
 
                   <ProgressItem
-                    label="Credential Theft"
-                    value="16%"
-                    percentage={16}
+                    label="Safe"
+                    value={
+                      analytics.totalScans > 0
+                        ? `${Math.round(
+                            (analytics.riskDistribution.safe /
+                              analytics.totalScans) *
+                              100
+                          )}%`
+                        : "0%"
+                    }
+                    percentage={
+                      analytics.totalScans > 0
+                        ? Math.round(
+                            (analytics.riskDistribution.safe /
+                              analytics.totalScans) *
+                              100
+                          )
+                        : 0
+                    }
                     color="bg-[#42B9FF]"
-                  />
-
-                  <ProgressItem
-                    label="Other Threats"
-                    value="9%"
-                    percentage={9}
-                    color="bg-[#9B8AFB]"
                   />
 
                 </div>
 
               </div>
-
 
               {/* AI ENGINE */}
 
@@ -1004,32 +1459,34 @@ function Home({onNavigate}) {
                       <div>
 
                         <p className="font-bold">
-                          Detection Model
+                          Detection Engine
                         </p>
 
                         <p className="text-xs text-[#607D94]">
-                          Random Forest + NLP
+                          Rule-based threat analysis
                         </p>
 
                       </div>
 
                     </div>
 
-
                     <div className="mt-5 flex items-end justify-between">
 
                       <div>
 
                         <p className="text-3xl font-bold">
-                          96.8%
+
+                          {analyticsLoading
+                            ? "..."
+                            : analytics.totalScans}
+
                         </p>
 
                         <p className="text-xs text-[#607D94]">
-                          Model accuracy
+                          Scans processed
                         </p>
 
                       </div>
-
 
                       <span className="rounded-md bg-[#0B382B] px-2 py-1 text-xs font-bold text-[#32D583]">
                         ONLINE
@@ -1039,17 +1496,24 @@ function Home({onNavigate}) {
 
                   </div>
 
-
                   <div className="mt-4 grid grid-cols-2 gap-3">
 
                     <MiniStat
-                      label="Scans/min"
-                      value="42"
+                      label="Threats"
+                      value={
+                        analyticsLoading
+                          ? "..."
+                          : analytics.threatsDetected
+                      }
                     />
 
                     <MiniStat
-                      label="Response"
-                      value="82ms"
+                      label="Safe"
+                      value={
+                        analyticsLoading
+                          ? "..."
+                          : analytics.safeScans
+                      }
                     />
 
                   </div>
@@ -1057,7 +1521,6 @@ function Home({onNavigate}) {
                 </div>
 
               </div>
-
 
               {/* PROTECTION */}
 
@@ -1100,7 +1563,6 @@ function Home({onNavigate}) {
 
             </div>
 
-
             {/* FOOTER */}
 
             <footer className="mt-8 flex flex-col justify-between gap-3 border-t border-[#172D44] pt-6 text-xs text-[#526B82] md:flex-row">
@@ -1113,7 +1575,7 @@ function Home({onNavigate}) {
                 AI-powered phishing & scam detection system
               </p>
 
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-4">
 
                 <span className="cursor-pointer hover:text-white">
                   Privacy
@@ -1146,12 +1608,17 @@ function Home({onNavigate}) {
    SIDEBAR ITEM
 ========================================================= */
 
-function SidebarItem({ icon, text, active = false,onClick }) {
+function SidebarItem({
+  icon,
+  text,
+  active = false,
+  onClick,
+}) {
 
   return (
 
     <div
-    onClick={onClick}
+      onClick={onClick}
       className={`mb-1 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-3 text-sm transition ${
         active
           ? "border border-[#174D6E] bg-[#0D2B40] text-[#42B9FF]"
@@ -1168,7 +1635,6 @@ function SidebarItem({ icon, text, active = false,onClick }) {
     </div>
 
   );
-
 }
 
 
@@ -1176,11 +1642,15 @@ function SidebarItem({ icon, text, active = false,onClick }) {
    MOBILE NAV
 ========================================================= */
 
-function MobileNav({ icon, text }) {
+function MobileNav({
+  icon,
+  text,
+  onClick,
+}) {
 
   return (
 
-    <div className="flex items-center gap-3 rounded-lg bg-[#0D2133] p-4 text-[#B5C7D6]">
+    <div className="flex cursor-pointer items-center gap-3 rounded-lg bg-[#0D2133] p-4 text-[#B5C7D6]" onClick={onClick}>
 
       {icon}
 
@@ -1229,7 +1699,6 @@ function StatCard({
 
   };
 
-
   return (
 
     <div className="rounded-xl border border-[#1A344C] bg-[#0B1B2B]/90 p-5 transition hover:border-[#31516D]">
@@ -1248,7 +1717,6 @@ function StatCard({
 
         </div>
 
-
         <div
           className={`rounded-lg p-2.5 ${styles[type].icon}`}
         >
@@ -1256,7 +1724,6 @@ function StatCard({
         </div>
 
       </div>
-
 
       <p
         className={`mt-4 text-xs font-semibold ${styles[type].change}`}
@@ -1281,7 +1748,10 @@ function StatCard({
    PANEL HEADER
 ========================================================= */
 
-function PanelHeader({ title, icon }) {
+function PanelHeader({
+  title,
+  icon,
+}) {
 
   return (
 
@@ -1298,7 +1768,6 @@ function PanelHeader({ title, icon }) {
         </h3>
 
       </div>
-
 
       <button className="text-xs text-[#526B82] hover:text-white">
         ⋮
@@ -1339,7 +1808,6 @@ function ThreatRow({
 
       </div>
 
-
       <div className="min-w-0 flex-1">
 
         <p className="truncate text-sm font-semibold">
@@ -1351,7 +1819,6 @@ function ThreatRow({
         </p>
 
       </div>
-
 
       <div className="hidden text-right sm:block">
 
@@ -1398,7 +1865,6 @@ function RiskItem({
 
   };
 
-
   return (
 
     <div className="flex items-center justify-between">
@@ -1414,7 +1880,6 @@ function RiskItem({
         </span>
 
       </div>
-
 
       <span className="text-sm font-bold">
         {value}
@@ -1455,7 +1920,6 @@ function RiskBox({
     },
 
   };
-
 
   return (
 
@@ -1515,7 +1979,6 @@ function RecentScan({
 
       </td>
 
-
       <td
         className={`px-4 py-3 font-bold ${
           safe
@@ -1525,7 +1988,6 @@ function RecentScan({
       >
         {risk}
       </td>
-
 
       <td className="px-4 py-3 text-[#607D94]">
         {time}
@@ -1564,7 +2026,6 @@ function ProgressItem({
         </span>
 
       </div>
-
 
       <div className="h-2 overflow-hidden rounded-full bg-[#142C42]">
 
@@ -1637,7 +2098,6 @@ function ProtectionItem({
         </span>
 
       </div>
-
 
       <span className="flex items-center gap-1.5 text-[10px] font-bold text-[#32D583]">
 

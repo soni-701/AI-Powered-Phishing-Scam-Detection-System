@@ -40,10 +40,16 @@ function Analytics() {
         setLoading(true);
         setError("");
 
-        const response = await fetch(
-          "http://localhost:5000/api/analytics"
-        );
+const token = localStorage.getItem("token");
 
+const response = await fetch(
+  "http://localhost:5000/api/analytics",
+  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+);
         const data = await response.json();
 
         if (!response.ok) {
@@ -151,7 +157,7 @@ function Analytics() {
   return (
     <div className="min-h-screen bg-transparent text-white">
 
-      <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-5 sm:py-8 lg:px-8">
 
         {/* HEADER */}
 
@@ -159,7 +165,7 @@ function Analytics() {
 
           <div className="flex items-center gap-3">
 
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#174D6E] bg-[#0D2B40]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#174D6E] bg-[#0D2B40] sm:h-12 sm:w-12">
 
               <BarChart3
                 size={24}
@@ -170,7 +176,7 @@ function Analytics() {
 
             <div>
 
-              <h1 className="text-3xl font-bold">
+              <h1 className="text-2xl font-bold sm:text-3xl">
                 Security Analytics
               </h1>
 
@@ -182,7 +188,7 @@ function Analytics() {
 
           </div>
 
-          <div className="rounded-lg border border-[#25445D] bg-[#0B1B2B] px-4 py-2.5 text-sm text-[#C4D0DB]">
+          <div className="w-full text-center rounded-lg border border-[#25445D] bg-[#0B1B2B] px-4 py-2.5 text-sm text-[#C4D0DB] md:w-auto">
             Live Database Data
           </div>
 
@@ -294,7 +300,7 @@ function Analytics() {
 
               {/* SIMPLE VISUAL BAR */}
 
-              <div className="mt-6 rounded-xl border border-[#142C42] bg-[#081725] p-5">
+              <div className="mt-6 rounded-xl border border-[#142C42] bg-[#081725] p-4 sm:p-5">
 
                 <div className="mb-3 flex justify-between text-xs text-[#607D94]">
 
@@ -375,9 +381,9 @@ function Analytics() {
 
             <div className="p-5">
 
-              <div className="flex justify-center py-5">
+              <div className="flex justify-center overflow-hidden py-5">
 
-                <div className="relative flex h-44 w-44 items-center justify-center rounded-full border-[18px] border-[#32D583]">
+                <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-[14px] sm:h-44 sm:w-44 sm:border-[18px] border-[#32D583]">
 
                   <div className="text-center">
 
@@ -545,7 +551,7 @@ function Analytics() {
 
         {/* FOOTER */}
 
-        <footer className="mt-8 border-t border-[#172D44] pt-6 text-center text-xs text-[#526B82]">
+        <footer className="mt-8 border-t border-[#172D44] pt-6 text-center text-xs leading-5 text-[#526B82]">
 
           AI-powered phishing & scam analytics · Live MongoDB data
 

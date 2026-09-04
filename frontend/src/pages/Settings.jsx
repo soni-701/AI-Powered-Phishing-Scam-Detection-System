@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect,useState } from "react";
 import {
   Bell,
   Check,
@@ -9,16 +9,43 @@ import {
   User,
 } from "lucide-react";
 
-function Settings() {
-  const [settings, setSettings] = useState({
+function Settings({onLogout}) {
+
+  const [user, setUser] = useState({
+  name: "User",
+  email: "Not available",
+  });
+
+ const [settings, setSettings] = useState(() => {
+  const savedSettings = localStorage.getItem(
+    "scamshield-settings"
+  );
+
+  if (savedSettings) {
+    return JSON.parse(savedSettings);
+  }
+
+  return {
     notifications: true,
     threatAlerts: true,
     emailAlerts: false,
     autoScan: true,
     darkMode: true,
-  });
+  };
+});
 
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+  const savedUser = JSON.parse(
+    localStorage.getItem("user") || "{}"
+  );
+
+  setUser({
+    name: savedUser.name || "User",
+    email: savedUser.email || "Not available",
+  });
+}, []);
 
   const updateSetting = (name) => {
     setSettings((previous) => ({
@@ -30,12 +57,17 @@ function Settings() {
   };
 
   const saveSettings = () => {
-    setSaved(true);
+  localStorage.setItem(
+    "scamshield-settings",
+    JSON.stringify(settings)
+  );
 
-    setTimeout(() => {
-      setSaved(false);
-    }, 2500);
-  };
+  setSaved(true);
+
+  setTimeout(() => {
+    setSaved(false);
+  }, 2500);
+};
 
   return (
     <div className="min-h-screen bg-transparent text-white">
@@ -77,12 +109,12 @@ function Settings() {
 
             <InputField
               label="Full Name"
-              value="Admin User"
+              value={user.name}
             />
 
             <InputField
               label="Email Address"
-              value="admin@scamshield.ai"
+              value={user.email}
             />
 
           </div>
@@ -265,6 +297,34 @@ function Settings() {
           </button>
 
         </div>
+
+          {/* LOGOUT */}
+
+<div className="mt-5 rounded-xl border border-[#5A202A] bg-[#1C1015] p-5">
+
+  <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+
+    <div>
+      <p className="text-sm font-semibold text-white">
+        Sign Out
+      </p>
+
+      <p className="mt-1 text-xs text-[#607D94]">
+        Sign out of your ScamShield account on this device.
+      </p>
+    </div>
+
+    <button
+      onClick={onLogout}
+      className="rounded-xl border border-[#FF4D5E] bg-[#3A1720] px-6 py-3 text-sm font-bold text-[#FF4D5E] transition hover:bg-[#4A1B25]"
+    >
+      Logout
+    </button>
+
+  </div>
+
+</div>
+
 
 
         {/* FOOTER */}

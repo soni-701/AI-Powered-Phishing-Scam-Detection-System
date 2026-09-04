@@ -18,6 +18,7 @@ const scanMessage = async (req, res) => {
     const result = analyzeMessage(message);
 
     const scan = await Scan.create({
+      userId: req.userId,
       type: "MESSAGE",
       target: result.message,
       score: result.score,

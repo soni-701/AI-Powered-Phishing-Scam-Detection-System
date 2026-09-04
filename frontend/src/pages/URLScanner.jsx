@@ -45,18 +45,21 @@ function URLScanner() {
   setScanning(true);
 
   try {
-    const response = await fetch(
-      "http://localhost:5000/api/scan/url",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          url: url.trim(),
-        }),
-      }
-    );
+    const token = localStorage.getItem("token");
+
+const response = await fetch(
+  "http://localhost:5000/api/scan/url",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      url: url.trim(),
+    }),
+  }
+);
 
     const data = await response.json();
 
@@ -97,7 +100,7 @@ function URLScanner() {
 
       {/* PAGE */}
 
-      <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-5 sm:py-8 lg:px-8">
 
         {/* HEADER */}
 
@@ -116,7 +119,7 @@ function URLScanner() {
 
             <div>
 
-              <h1 className="text-3xl font-bold">
+              <h1 className="text-2xl font-bold sm:text-3xl">
                 URL Scanner
               </h1>
 
@@ -133,7 +136,7 @@ function URLScanner() {
 
         {/* SCANNER CARD */}
 
-        <div className="rounded-2xl border border-[#1A344C] bg-[#0B1B2B]/90 p-6 shadow-xl">
+        <div className="rounded-2xl border border-[#1A344C] bg-[#0B1B2B]/90 p-4 sm:p-6 shadow-xl">
 
           {/* CARD HEADER */}
 
@@ -330,7 +333,7 @@ function URLScanner() {
 
               <button
                 onClick={handleClear}
-                className="rounded-lg border border-[#25445D] px-4 py-2 text-sm text-[#8BA0B2] transition hover:bg-[#102A43] hover:text-white"
+                className="w-full rounded-lg border border-[#25445D] px-4 py-2 text-sm md:w-auto text-[#8BA0B2] transition hover:bg-[#102A43] hover:text-white"
               >
                 New Scan
               </button>
@@ -363,10 +366,10 @@ function URLScanner() {
                   Risk Score
                 </p>
 
-                <div className="flex items-center gap-6">
+                <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-6">
 
                   <div
-                    className={`flex h-36 w-36 shrink-0 items-center justify-center rounded-full border-[12px] ${
+                    className={`flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-[10px] sm:h-36 sm:w-36 sm:border-[12px] ${
                       result.dangerous
                         ? "border-[#FF4D5E]/30"
                         : result.score >= 30
@@ -377,7 +380,7 @@ function URLScanner() {
 
                     <div className="text-center">
 
-                      <p className="text-4xl font-extrabold">
+                      <p className="text-3xl font-extrabold sm:text-4xl">
                         {result.score}
                       </p>
 
@@ -537,7 +540,7 @@ function InfoItem({ icon, title, text }) {
 
   return (
 
-    <div className="flex items-center gap-3 rounded-xl border border-[#17344D] bg-[#081725]/90 p-4">
+    <div className="flex items-start gap-3 rounded-xl border border-[#17344D] bg-[#081725]/90 p-4">
 
       <div className="text-[#42B9FF]">
         {icon}

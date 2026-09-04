@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 //   Activity,
   CheckCircle,
@@ -66,6 +66,25 @@ function Users() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [roleFilter, setRoleFilter] = useState("All");
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showSwipeHint, setShowSwipeHint] = useState(true);
+
+  useEffect(() => {
+    const tableContainer = document.getElementById("users-table-scroll");
+
+    if (!tableContainer) return;
+
+    const handleScroll = () => {
+      if (tableContainer.scrollLeft > 10) {
+        setShowSwipeHint(false);
+      }
+    };
+
+    tableContainer.addEventListener("scroll", handleScroll);
+
+    return () => {
+      tableContainer.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   const filteredUsers = useMemo(() => {
     return usersData.filter((user) => {
@@ -109,28 +128,28 @@ function Users() {
   return (
     <div className="min-h-screen bg-transparent text-white">
 
-      <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8">
+      <div className="mx-auto max-w-7xl px-3 py-5 sm:px-5 sm:py-8 lg:px-8">
 
         {/* HEADER */}
 
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
 
           <div className="flex items-center gap-3">
 
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#174D6E] bg-[#0D2B40]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#174D6E] bg-[#0D2B40] sm:h-12 sm:w-12">
               <UsersIcon
-                size={24}
-                className="text-[#42B9FF]"
+                size={20}
+                className="text-[#42B9FF] sm:h-6 sm:w-6"
               />
             </div>
 
             <div>
 
-              <h1 className="text-3xl font-bold">
+              <h1 className="text-2xl font-bold sm:text-3xl">
                 Users
               </h1>
 
-              <p className="mt-1 text-sm text-[#607D94]">
+              <p className="mt-1 text-xs leading-5 text-[#607D94] sm:text-sm">
                 Manage users and access to the security platform
               </p>
 
@@ -182,7 +201,7 @@ function Users() {
 
           {/* FILTER BAR */}
 
-          <div className="flex flex-col gap-4 border-b border-[#17344D] p-5 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-col gap-3 border-b border-[#17344D] p-4 sm:gap-4 sm:p-5 xl:flex-row xl:items-center xl:justify-between">
 
             {/* SEARCH */}
 
@@ -206,12 +225,12 @@ function Users() {
 
             {/* FILTERS */}
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="grid grid-cols-1 gap-3 sm:flex sm:flex-row">
 
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="rounded-xl border border-[#25445D] bg-[#081725] px-4 py-3 text-sm text-[#C4D0DB] outline-none focus:border-[#42B9FF]"
+                className="w-full rounded-xl border border-[#25445D] bg-[#081725] px-4 py-3 text-sm text-[#C4D0DB] outline-none focus:border-[#42B9FF] sm:w-auto"
               >
 
                 <option value="All">
@@ -238,7 +257,7 @@ function Users() {
                 onChange={(e) =>
                   setStatusFilter(e.target.value)
                 }
-                className="rounded-xl border border-[#25445D] bg-[#081725] px-4 py-3 text-sm text-[#C4D0DB] outline-none focus:border-[#42B9FF]"
+                className="w-full rounded-xl border border-[#25445D] bg-[#081725] px-4 py-3 text-sm text-[#C4D0DB] outline-none focus:border-[#42B9FF] sm:w-auto"
               >
 
                 <option value="All">
@@ -262,7 +281,20 @@ function Users() {
 
           {/* TABLE */}
 
-          <div className="overflow-x-auto">
+          <div
+            id="users-table-scroll"
+            className="relative overflow-x-auto"
+          >
+
+            {showSwipeHint && (
+              <div className="pointer-events-none absolute right-3 top-1/2 z-10 -translate-y-1/2 lg:hidden">
+                <div className="rounded-full border border-[#25445D] bg-[#081725]/95 px-3 py-2 text-[10px] font-bold text-[#42B9FF] shadow-lg">
+                  Swipe →
+                </div>
+              </div>
+            )}
+
+            <div className="pointer-events-none absolute inset-y-0 right-0 z-[5] w-12 bg-gradient-to-l from-[#0B1B2B] to-transparent lg:hidden" />
 
             <table className="w-full min-w-[900px]">
 
@@ -439,13 +471,13 @@ function Users() {
 
       {selectedUser && (
 
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-3 sm:p-5">
 
-          <div className="w-full max-w-md rounded-2xl border border-[#25445D] bg-[#091624] shadow-2xl">
+          <div className="my-3 w-full max-w-md rounded-2xl border border-[#25445D] bg-[#091624] shadow-2xl sm:my-5">
 
             {/* MODAL HEADER */}
 
-            <div className="flex items-center justify-between border-b border-[#17344D] p-5">
+            <div className="flex items-center justify-between border-b border-[#17344D] p-4 sm:p-5">
 
               <div>
 
@@ -471,7 +503,7 @@ function Users() {
 
             {/* PROFILE */}
 
-            <div className="p-5">
+            <div className="max-h-[70vh] overflow-y-auto p-4 sm:p-5">
 
               <div className="mb-6 flex flex-col items-center">
 
@@ -519,7 +551,7 @@ function Users() {
 
             {/* CLOSE */}
 
-            <div className="border-t border-[#17344D] p-5">
+            <div className="border-t border-[#17344D] p-4 sm:p-5">
 
               <button
                 onClick={() => setSelectedUser(null)}

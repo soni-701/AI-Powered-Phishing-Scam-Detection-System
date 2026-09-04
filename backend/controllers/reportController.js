@@ -2,7 +2,9 @@ const Scan = require("../models/Scan");
 
 const getAllReports = async (req, res) => {
   try {
-    const reports = await Scan.find()
+    const reports = await Scan.find({
+      userId: req.userId,
+    })
       .sort({ createdAt: -1 });
 
     res.status(200).json({

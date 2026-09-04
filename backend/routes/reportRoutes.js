@@ -4,8 +4,11 @@ const {
   getAllReports,
 } = require("../controllers/reportController");
 
+
+const protect = require("../middleware/authMiddleware")
+
 const router = express.Router();
 
-router.get("/", getAllReports);
+router.get("/",protect, getAllReports);
 
 module.exports = router;

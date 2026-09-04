@@ -7,15 +7,30 @@ import Analytics from "./pages/Analytics";
 import ThreatReports from "./pages/ThreatReports";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
-
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    !!localStorage.getItem("token")
+  );
+
   const [page, setPage] = useState(
-    window.history.state?.page || "home"
+    localStorage.getItem("token")
+      ? window.history.state?.page || "home"
+      : "login"
   );
 
   useEffect(() => {
     const handlePopState = (event) => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setIsLoggedIn(false);
+        setPage("login");
+        return;
+      }
+
       setPage(event.state?.page || "home");
     };
 
@@ -27,6 +42,36 @@ function App() {
   }, []);
 
   const navigate = (nextPage) => {
+    const publicPages = ["login", "register"];
+
+    const token = localStorage.getItem("token");
+
+    // If user is not logged in, allow only login/register
+    if (!token && !publicPages.includes(nextPage)) {
+      window.history.pushState(
+        { page: "login" },
+        "",
+        window.location.pathname
+      );
+
+      setIsLoggedIn(false);
+      setPage("login");
+      return;
+    }
+
+    // Login/register navigation
+    if (publicPages.includes(nextPage)) {
+      window.history.pushState(
+        { page: nextPage },
+        "",
+        window.location.pathname
+      );
+
+      setPage(nextPage);
+      return;
+    }
+
+    // Protected page navigation
     window.history.pushState(
       { page: nextPage },
       "",
@@ -36,35 +81,72 @@ function App() {
     setPage(nextPage);
   };
 
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+    navigate("home");
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    setIsLoggedIn(false);
+
+    window.history.pushState(
+      { page: "login" },
+      "",
+      window.location.pathname
+    );
+
+    setPage("login");
+  };
+
   return (
     <div className="min-h-screen bg-transparent">
 
-      {page === "home" && (
-        <Home onNavigate={navigate} />
+      {!isLoggedIn && page === "login" && (
+        <Login
+          onNavigate={navigate}
+          onLogin={handleLogin}
+        />
       )}
 
-      {page === "url-scanner" && (
+      {!isLoggedIn && page === "register" && (
+        <Register onNavigate={navigate} />
+      )}
+
+      {isLoggedIn && page === "home" && (
+        <Home
+          onNavigate={navigate}
+          onLogout={handleLogout}
+        />
+      )}
+
+      {isLoggedIn && page === "url-scanner" && (
         <URLScanner onNavigate={navigate} />
       )}
 
-      {page === "message-scanner" && (
+      {isLoggedIn && page === "message-scanner" && (
         <MessageScanner onNavigate={navigate} />
       )}
 
-      {page === "analytics" && (
+      {isLoggedIn && page === "analytics" && (
         <Analytics onNavigate={navigate} />
       )}
 
-      {page === "threat-reports" && (
+      {isLoggedIn && page === "threat-reports" && (
         <ThreatReports onNavigate={navigate} />
       )}
 
-      {page === "users" && (
-  <Users onNavigate={setPage} />
-)}
-    {page === "settings" && (
-  <Settings onNavigate={setPage} />
-)}
+      {isLoggedIn && page === "users" && (
+        <Users onNavigate={navigate} />
+      )}
+
+      {isLoggedIn && page === "settings" && (
+        <Settings onNavigate={navigate} 
+        onLogout={handleLogout}/>
+      )}
+
     </div>
   );
 }

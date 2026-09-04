@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   Calendar,
@@ -19,6 +19,8 @@ function ThreatReports() {
   const [selectedReport, setSelectedReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showSwipeHint, setShowSwipeHint] = useState(true);
+  const tableScrollRef = useRef(null);
 
   // ==========================================
   // GET REPORTS FROM BACKEND
@@ -30,9 +32,16 @@ function ThreatReports() {
         setLoading(true);
         setError("");
 
-        const response = await fetch(
-          "http://localhost:5000/api/reports"
-        );
+       const token = localStorage.getItem("token");
+
+const response = await fetch(
+  "http://localhost:5000/api/reports",
+  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+);
 
         const data = await response.json();
 
@@ -142,6 +151,28 @@ function ThreatReports() {
       );
     });
   }, [reports, search, filter]);
+
+  // ==========================================
+  // MOBILE TABLE SWIPE HINT
+  // ==========================================
+
+  useEffect(() => {
+    const container = tableScrollRef.current;
+
+    if (!container) return;
+
+    const handleScroll = () => {
+      if (container.scrollLeft > 10) {
+        setShowSwipeHint(false);
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+    };
+  }, [loading, error, filteredReports.length]);
 
   // ==========================================
   // SUMMARY COUNTS
@@ -626,9 +657,9 @@ function ThreatReports() {
               />
 
               <DetailRow
-                label="AI Confidence"
-                value={`${selectedReport.confidence}%`}
-              />
+  label="Detection Confidence"
+  value={`${selectedReport.confidence}%`}
+/>
 
               <DetailRow
                 label="Detected"

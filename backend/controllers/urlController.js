@@ -1,7 +1,4 @@
-const {
-  analyzeURL,
-} = require("../services/urlDetectionService");
-
+const { analyzeURL } = require("../services/urlDetectionService");
 const Scan = require("../models/Scan");
 
 const scanURL = async (req, res) => {
@@ -18,6 +15,7 @@ const scanURL = async (req, res) => {
     const result = analyzeURL(url);
 
     const scan = await Scan.create({
+      userId: req.userId,
       type: "URL",
       target: result.url,
       score: result.score,
@@ -32,7 +30,6 @@ const scanURL = async (req, res) => {
       result,
       scanId: scan._id,
     });
-
   } catch (error) {
     console.error("URL scanning error:", error);
 
@@ -43,6 +40,4 @@ const scanURL = async (req, res) => {
   }
 };
 
-module.exports = {
-  scanURL,
-};
+module.exports = { scanURL };
