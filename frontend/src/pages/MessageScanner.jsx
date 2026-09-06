@@ -58,14 +58,15 @@ const response = await fetch(
       );
     }
 
-    setResult({
-      score: data.result.score,
-      level: data.result.level,
-      dangerous: data.result.score >= 60,
-      category: data.result.category,
-      confidence: data.result.confidence,
-      reasons: data.result.reasons,
-    });
+   setResult({
+  score: data.result.score,
+  level: data.result.level,
+  dangerous: data.result.score >= 60,
+  category: data.result.category,
+  confidence: data.result.confidence,
+  prediction: data.result.prediction,
+  reasons: data.result.reasons,
+});
 
   } catch (error) {
     console.error("Message Scanner Error:", error);
