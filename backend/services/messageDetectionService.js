@@ -1,11 +1,16 @@
 function analyzeMessage(message) {
+  const originalMessage = message;
   const text = message.toLowerCase().trim();
 
   let score = 5;
+
   const reasons = [];
   const detectedKeywords = [];
 
-  // Suspicious scam keywords
+  // =========================================================
+  // 1. SCAM / SPAM KEYWORDS
+  // =========================================================
+
   const scamKeywords = [
     "urgent",
     "verify",
@@ -29,6 +34,16 @@ function analyzeMessage(message) {
     "immediately",
     "confirm",
     "kyc",
+    "cashback",
+    "reward",
+    "bonus",
+    "offer",
+    "credit",
+    "debit",
+    "transaction",
+    "upi",
+    "wallet",
+    "investment",
   ];
 
   scamKeywords.forEach((keyword) => {
@@ -38,19 +53,17 @@ function analyzeMessage(message) {
   });
 
   if (detectedKeywords.length > 0) {
-    score += Math.min(
-      detectedKeywords.length * 6,
-      36
-    );
+    score += Math.min(detectedKeywords.length * 5, 30);
 
     reasons.push(
-      `Suspicious keywords detected: ${detectedKeywords.join(
-        ", "
-      )}`
+      `Suspicious keywords detected: ${detectedKeywords.join(", ")}`
     );
   }
 
-  // Urgency detection
+  // =========================================================
+  // 2. URGENCY / PRESSURE DETECTION
+  // =========================================================
+
   const urgencyWords = [
     "urgent",
     "immediately",
@@ -58,21 +71,30 @@ function analyzeMessage(message) {
     "asap",
     "within 24 hours",
     "act fast",
+    "act now",
+    "don't wait",
+    "do not wait",
+    "last chance",
+    "expires today",
+    "hurry",
   ];
 
-  const hasUrgency = urgencyWords.some((word) =>
+  const detectedUrgency = urgencyWords.filter((word) =>
     text.includes(word)
   );
 
-  if (hasUrgency) {
-    score += 15;
+  if (detectedUrgency.length > 0) {
+    score += Math.min(detectedUrgency.length * 8, 16);
 
     reasons.push(
       "Message uses urgent or pressure-based language."
     );
   }
 
-  // Money-related language
+  // =========================================================
+  // 3. MONEY / FINANCIAL CONTENT
+  // =========================================================
+
   const moneyWords = [
     "₹",
     "rs",
@@ -83,48 +105,163 @@ function analyzeMessage(message) {
     "reward",
     "payment",
     "refund",
+    "cashback",
+    "bonus",
+    "upi",
+    "bank",
+    "wallet",
+    "transaction",
+    "investment",
   ];
 
-  const hasMoneyContent = moneyWords.some((word) =>
+  const detectedMoneyWords = moneyWords.filter((word) =>
     text.includes(word)
   );
 
-  if (hasMoneyContent) {
-    score += 15;
+  if (detectedMoneyWords.length > 0) {
+    score += Math.min(detectedMoneyWords.length * 5, 15);
 
     reasons.push(
-      "Message contains financial or reward-related content."
+      "Message contains financial, payment, or reward-related content."
     );
   }
 
-  // Link detection
-  const urlPattern =
-    /(https?:\/\/[^\s]+|www\.[^\s]+)/i;
+  // =========================================================
+  // 4. SUSPICIOUS LINK DETECTION
+  // =========================================================
 
-  if (urlPattern.test(message)) {
+  const urlPattern =
+    /(https?:\/\/[^\s]+|www\.[^\s]+|bit\.ly\/[^\s]+|tinyurl\.com\/[^\s]+)/i;
+
+  if (urlPattern.test(originalMessage)) {
     score += 20;
 
     reasons.push(
-      "Message contains a clickable website link."
+      "Message contains a website or shortened link."
     );
   }
 
-  // OTP/password request
-  if (
-    text.includes("otp") ||
-    text.includes("one time password") ||
-    text.includes("password")
-  ) {
+  // =========================================================
+  // 5. OTP / PASSWORD / SENSITIVE INFORMATION
+  // =========================================================
+
+  const sensitiveWords = [
+    "otp",
+    "one time password",
+    "password",
+    "pin",
+    "cvv",
+    "card number",
+    "bank details",
+    "account number",
+    "verification code",
+  ];
+
+  const detectedSensitiveWords = sensitiveWords.filter((word) =>
+    text.includes(word)
+  );
+
+  if (detectedSensitiveWords.length > 0) {
+    score += 20;
+
+    reasons.push(
+      "Message may be requesting sensitive authentication or financial information."
+    );
+  }
+
+  // =========================================================
+  // 6. PERSONAL INFORMATION REQUEST
+  // =========================================================
+
+  const personalInfoWords = [
+    "send your details",
+    "share your details",
+    "share your information",
+    "provide your information",
+    "send otp",
+    "share otp",
+    "send password",
+    "share password",
+    "send pin",
+    "share pin",
+    "enter your details",
+  ];
+
+  const personalInfoDetected = personalInfoWords.some((phrase) =>
+    text.includes(phrase)
+  );
+
+  if (personalInfoDetected) {
     score += 15;
 
     reasons.push(
-      "Message may be requesting sensitive authentication information."
+      "Message asks the recipient to share personal or sensitive information."
     );
   }
 
-  // Excessive exclamation marks
+  // =========================================================
+  // 7. PHONE NUMBER DETECTION
+  // =========================================================
+
+  const phonePattern =
+    /(?:\+91[\s-]?)?[6-9]\d{9}\b/;
+
+  if (phonePattern.test(originalMessage)) {
+    score += 5;
+
+    reasons.push(
+      "Message contains a phone number or contact number."
+    );
+  }
+
+  // =========================================================
+  // 8. EMAIL DETECTION
+  // =========================================================
+
+  const emailPattern =
+    /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
+
+  if (emailPattern.test(originalMessage)) {
+    score += 3;
+
+    reasons.push(
+      "Message contains an email address."
+    );
+  }
+
+  // =========================================================
+  // 9. CALL / CONTACT PRESSURE
+  // =========================================================
+
+  const contactWords = [
+    "call us",
+    "call me",
+    "contact us",
+    "contact me",
+    "whatsapp us",
+    "message us",
+    "reply now",
+    "call immediately",
+  ];
+
+  const contactPressure = contactWords.some((word) =>
+    text.includes(word)
+  );
+
+  if (contactPressure) {
+    score += 8;
+
+    reasons.push(
+      "Message pressures the recipient to contact or respond immediately."
+    );
+  }
+
+  // =========================================================
+  // 10. EXCESSIVE EXCLAMATION MARKS
+  // =========================================================
+
   const exclamationCount =
-    (message.match(/!/g) || []).length;
+    (originalMessage.match(/!/g) || []).length;
 
   if (exclamationCount >= 3) {
     score += 5;
@@ -134,9 +271,12 @@ function analyzeMessage(message) {
     );
   }
 
-  // Uppercase words
+  // =========================================================
+  // 11. ALL CAPS DETECTION
+  // =========================================================
+
   const uppercaseWords =
-    message.match(/\b[A-Z]{4,}\b/g) || [];
+    originalMessage.match(/\b[A-Z]{4,}\b/g) || [];
 
   if (uppercaseWords.length >= 2) {
     score += 5;
@@ -146,7 +286,15 @@ function analyzeMessage(message) {
     );
   }
 
+  // =========================================================
+  // 12. FINAL SCORE
+  // =========================================================
+
   score = Math.min(score, 98);
+
+  // =========================================================
+  // 13. CLASSIFICATION
+  // =========================================================
 
   let level = "SAFE";
   let category = "No Threat";
@@ -159,19 +307,31 @@ function analyzeMessage(message) {
     category = "Suspicious Message";
   }
 
+  // =========================================================
+  // 14. DEFAULT REASON
+  // =========================================================
+
   if (reasons.length === 0) {
     reasons.push(
-      "No common scam indicators were detected."
+      "No common spam or scam indicators were detected."
     );
   }
+
+  // =========================================================
+  // 15. CONFIDENCE
+  // =========================================================
 
   const confidence = Math.min(
     98,
     80 + Math.floor(score / 5)
   );
 
+  // =========================================================
+  // FINAL RESULT
+  // =========================================================
+
   return {
-    message,
+    message: originalMessage,
     score,
     level,
     category,

@@ -7,7 +7,8 @@ const urlRoutes = require("./routes/urlRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
-const authRoutes=require('./routes/authRoutes')
+const authRoutes=require('./routes/authRoutes');
+const userRoutes=require('./routes/userRoutes')
 
 app.use(cors());
 app.use(express.json());
@@ -32,5 +33,5 @@ app.use("/api/scan/message", messageRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/auth",authRoutes);
-
+app.use("/api/users", userRoutes);
 module.exports = app;

@@ -10,58 +10,12 @@ import {
   UserX,
 } from "lucide-react";
 
-const usersData = [
-  {
-    id: "USR-001",
-    name: "Admin User",
-    email: "admin@scamshield.ai",
-    role: "Admin",
-    status: "Active",
-    lastActive: "Just now",
-  },
-  {
-    id: "USR-002",
-    name: "Rahul Sharma",
-    email: "rahul@example.com",
-    role: "Analyst",
-    status: "Active",
-    lastActive: "5 min ago",
-  },
-  {
-    id: "USR-003",
-    name: "Priya Singh",
-    email: "priya@example.com",
-    role: "Analyst",
-    status: "Active",
-    lastActive: "18 min ago",
-  },
-  {
-    id: "USR-004",
-    name: "Aman Verma",
-    email: "aman@example.com",
-    role: "User",
-    status: "Inactive",
-    lastActive: "2 hours ago",
-  },
-  {
-    id: "USR-005",
-    name: "Neha Gupta",
-    email: "neha@example.com",
-    role: "User",
-    status: "Active",
-    lastActive: "35 min ago",
-  },
-  {
-    id: "USR-006",
-    name: "Vikash Kumar",
-    email: "vikash@example.com",
-    role: "User",
-    status: "Inactive",
-    lastActive: "Yesterday",
-  },
-];
-
 function Users() {
+  const [usersData, setUsersData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [roleFilter, setRoleFilter] = useState("All");
@@ -69,22 +23,52 @@ function Users() {
   const [showSwipeHint, setShowSwipeHint] = useState(true);
 
   useEffect(() => {
-    const tableContainer = document.getElementById("users-table-scroll");
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-    if (!tableContainer) return;
+      const token = localStorage.getItem("token");
 
-    const handleScroll = () => {
-      if (tableContainer.scrollLeft > 10) {
-        setShowSwipeHint(false);
+      const response = await fetch(
+        "http://localhost:5000/api/users",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Unable to fetch users."
+        );
       }
-    };
 
-    tableContainer.addEventListener("scroll", handleScroll);
+      const formattedUsers = data.users.map((user) => ({
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: "User",
+        status: "Active",
+        lastActive: user.updatedAt
+          ? new Date(user.updatedAt).toLocaleString()
+          : "Not available",
+      }));
 
-    return () => {
-      tableContainer.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
+      setUsersData(formattedUsers);
+    } catch (err) {
+      console.error("Users fetch error:", err);
+      setError(err.message || "Unable to fetch users.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchUsers();
+}, []);
 
   const filteredUsers = useMemo(() => {
     return usersData.filter((user) => {
@@ -329,7 +313,23 @@ function Users() {
 
               <tbody>
 
-                {filteredUsers.map((user) => (
+                {loading && (
+                  <tr>
+                    <td colSpan="5" className="px-5 py-10 text-center text-sm text-[#607D94]">
+                      Loading users...
+                    </td>
+                  </tr>
+                )}
+
+                {!loading && error && (
+                  <tr>
+                    <td colSpan="5" className="px-5 py-10 text-center text-sm text-[#FF4D5E]">
+                      {error}
+                    </td>
+                  </tr>
+                )}
+
+                {!loading && !error && filteredUsers.map((user) => (
 
                   <tr
                     key={user.id}
