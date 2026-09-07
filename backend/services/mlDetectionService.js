@@ -1,11 +1,16 @@
 const axios = require("axios");
 
-const ML_SERVICE_URL = "http://localhost:8000/predict";
+const ML_SERVICE_URL = "http://localhost:8000";
+
+
+// =========================================
+// SMS ML ANALYSIS
+// =========================================
 
 const analyzeMessageWithML = async (message) => {
   try {
     const response = await axios.post(
-      ML_SERVICE_URL,
+      `${ML_SERVICE_URL}/predict`,
       {
         message,
       },
@@ -17,14 +22,48 @@ const analyzeMessageWithML = async (message) => {
     return response.data;
   } catch (error) {
     console.error(
-      "ML service connection error:",
+      "SMS ML service connection error:",
       error.response?.data || error.message
     );
 
-    throw new Error("ML service is unavailable.");
+    throw new Error("SMS ML service is unavailable.");
   }
 };
 
+
+// =========================================
+// URL ML ANALYSIS
+// =========================================
+
+const analyzeURLWithML = async (url) => {
+  try {
+    const response = await axios.post(
+      `${ML_SERVICE_URL}/predict-url`,
+      {
+        url,
+      },
+      {
+        timeout: 10000,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      "URL ML service connection error:",
+      error.response?.data || error.message
+    );
+
+    throw new Error("URL ML service is unavailable.");
+  }
+};
+
+
+// =========================================
+// EXPORT
+// =========================================
+
 module.exports = {
   analyzeMessageWithML,
+  analyzeURLWithML,
 };
