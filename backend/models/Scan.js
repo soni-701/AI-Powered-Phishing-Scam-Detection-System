@@ -42,6 +42,19 @@ const scanSchema = new mongoose.Schema(
       required: true,
     },
 
+    // AI/ML prediction
+    prediction: {
+      type: String,
+      default: null,
+    },
+
+    // URL ML feature values
+    features: {
+      type: [Number],
+      default: [],
+    },
+
+    // Detection reasons
     reasons: {
       type: [String],
       default: [],

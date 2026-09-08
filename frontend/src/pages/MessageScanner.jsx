@@ -65,16 +65,45 @@ const response = await fetch(
   category: data.result.category,
   confidence: data.result.confidence,
   prediction: data.result.prediction,
-  reasons: data.result.reasons,
+  reasons: data.result.reasons || [],
+  detectedIndicators: data.result.detectedIndicators || [],
 });
 
   } catch (error) {
-    console.error("Message Scanner Error:", error);
+  console.error("Message Scanner Error:", error);
 
+  const errorMessage = error.message || "";
+  const lowerErrorMessage = errorMessage.toLowerCase();
+
+  if (
+    lowerErrorMessage.includes("too many") ||
+    lowerErrorMessage.includes("rate limit")
+  ) {
     setError(
-      "Unable to connect to the backend. Make sure the backend is running on port 5000."
+      "Too many scan requests. Please wait a few minutes and try again."
     );
-  } finally {
+  } else if (
+    lowerErrorMessage.includes("ml service") ||
+    lowerErrorMessage.includes("sms ml")
+  ) {
+    setError(
+      "SMS ML service is unavailable. Please start the AI detection service and try again."
+    );
+  } else if (
+    lowerErrorMessage.includes("authentication") ||
+    lowerErrorMessage.includes("token") ||
+    lowerErrorMessage.includes("unauthorized")
+  ) {
+    setError(
+      "Your session has expired. Please log in again."
+    );
+  } else {
+    setError(
+      errorMessage ||
+        "Unable to connect to the backend. Make sure the backend is running on port 5000."
+    );
+  }
+} finally {
     setScanning(false);
   }
 };
@@ -370,6 +399,67 @@ const response = await fetch(
               </div>
 
             </div>
+
+            {/* DETECTED INDICATORS */}
+            {result.detectedIndicators &&
+              result.detectedIndicators.length > 0 && (
+                <div className="mt-6 rounded-xl border border-[#17344D] bg-[#081725] p-6">
+
+                  <div className="mb-4">
+                    <p className="text-sm font-semibold text-[#8BA0B2]">
+                      Detected Indicators
+                    </p>
+
+                    <p className="mt-1 text-xs text-[#607D94]">
+                      Explainable signals identified during message analysis
+                    </p>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {result.detectedIndicators.map(
+                      (indicator, index) => (
+                        <div
+                          key={`${indicator.type}-${index}`}
+                          className="rounded-lg border border-[#17344D] bg-[#0B1B2B] p-4"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div
+                              className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
+                                result.dangerous
+                                  ? "bg-[#3A1720]"
+                                  : result.score >= 30
+                                  ? "bg-[#392514]"
+                                  : "bg-[#0B3028]"
+                              }`}
+                            >
+                              <CheckCircle
+                                size={15}
+                                className={
+                                  result.dangerous
+                                    ? "text-[#FF4D5E]"
+                                    : result.score >= 30
+                                    ? "text-[#FF9F43]"
+                                    : "text-[#32D583]"
+                                }
+                              />
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-white">
+                                {indicator.label}
+                              </p>
+
+                              <p className="mt-1 break-words text-[11px] leading-5 text-[#607D94]">
+                                {indicator.details}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
 
             {/* FINDINGS */}
             <div className="mt-6 rounded-xl border border-[#17344D] bg-[#081725] p-6">

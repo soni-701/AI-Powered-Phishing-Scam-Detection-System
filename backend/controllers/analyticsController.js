@@ -8,6 +8,10 @@ const getAnalytics = async (req, res) => {
 
     const recentScans = scans.slice(0, 5);
 
+    // ==========================================
+    // BASIC SCAN STATISTICS
+    // ==========================================
+
     const totalScans = scans.length;
 
     const threatsDetected = scans.filter(
@@ -40,50 +44,155 @@ const getAnalytics = async (req, res) => {
           )
         : 0;
 
-          // -----------------------------
-// Detection Activity - Last 7 Days
-// -----------------------------
+    // ==========================================
+    // ML PREDICTION STATISTICS
+    // ==========================================
 
-const dailyActivity = [];
+    const mlPredictions = {
+      phishing: 0,
+      legitimate: 0,
+      spam: 0,
+      ham: 0,
+      unknown: 0,
+    };
 
-for (let i = 6; i >= 0; i--) {
-  const date = new Date();
+    scans.forEach((scan) => {
+      if (scan.prediction === "phishing") {
+        mlPredictions.phishing++;
+      } else if (scan.prediction === "legitimate") {
+        mlPredictions.legitimate++;
+      } else if (scan.prediction === "spam") {
+        mlPredictions.spam++;
+      } else if (scan.prediction === "ham") {
+        mlPredictions.ham++;
+      } else {
+        mlPredictions.unknown++;
+      }
+    });
 
-  date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() - i);
+    // ==========================================
+    // ML TYPE STATISTICS
+    // ==========================================
 
-  const nextDate = new Date(date);
-  nextDate.setDate(nextDate.getDate() + 1);
+    const mlDetection = {
+      url: {
+        total: 0,
+        phishing: 0,
+        legitimate: 0,
+      },
 
-  const dayScans = scans.filter((scan) => {
-    const scanDate = new Date(scan.createdAt);
+      message: {
+        total: 0,
+        spam: 0,
+        ham: 0,
+      },
+    };
 
-    return (
-      scanDate >= date &&
-      scanDate < nextDate
+    scans.forEach((scan) => {
+      if (scan.type === "URL") {
+        mlDetection.url.total++;
+
+        if (scan.prediction === "phishing") {
+          mlDetection.url.phishing++;
+        }
+
+        if (scan.prediction === "legitimate") {
+          mlDetection.url.legitimate++;
+        }
+      }
+
+      if (scan.type === "MESSAGE") {
+        mlDetection.message.total++;
+
+        if (scan.prediction === "spam") {
+          mlDetection.message.spam++;
+        }
+
+        if (scan.prediction === "ham") {
+          mlDetection.message.ham++;
+        }
+      }
+    });
+
+    // ==========================================
+    // ML CONFIDENCE
+    // ==========================================
+
+    const mlScans = scans.filter(
+      (scan) =>
+        typeof scan.confidence === "number"
     );
-  });
 
-  const safe = dayScans.filter(
-    (scan) => scan.score < 30
-  ).length;
+    const averageMLConfidence =
+      mlScans.length > 0
+        ? Math.round(
+            mlScans.reduce(
+              (sum, scan) =>
+                sum + scan.confidence,
+              0
+            ) / mlScans.length
+          )
+        : 0;
 
-  const threats = dayScans.filter(
-    (scan) => scan.score >= 60
-  ).length;
+    // ==========================================
+    // DETECTION ACTIVITY - LAST 7 DAYS
+    // ==========================================
 
-  dailyActivity.push({
-    date: date.toISOString().split("T")[0],
-    safe,
-    threats,
-    total: dayScans.length,
-  });
-}
+    const dailyActivity = [];
 
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
 
-    // -----------------------------
-    // Risk Distribution
-    // -----------------------------
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() - i);
+
+      const nextDate = new Date(date);
+      nextDate.setDate(
+        nextDate.getDate() + 1
+      );
+
+      const dayScans = scans.filter(
+        (scan) => {
+          const scanDate = new Date(
+            scan.createdAt
+          );
+
+          return (
+            scanDate >= date &&
+            scanDate < nextDate
+          );
+        }
+      );
+
+      const safe = dayScans.filter(
+        (scan) => scan.score < 30
+      ).length;
+
+      const suspicious = dayScans.filter(
+        (scan) =>
+          scan.score >= 30 &&
+          scan.score < 60
+      ).length;
+
+      const threats = dayScans.filter(
+        (scan) => scan.score >= 60
+      ).length;
+
+      dailyActivity.push({
+        date: date
+          .toISOString()
+          .split("T")[0],
+
+        safe,
+        suspicious,
+        threats,
+        total: dayScans.length,
+      });
+    }
+
+    // ==========================================
+    // RISK DISTRIBUTION
+    // ==========================================
 
     const riskDistribution = {
       safe: safeScans,
@@ -91,9 +200,9 @@ for (let i = 6; i >= 0; i--) {
       highRisk: threatsDetected,
     };
 
-    // -----------------------------
-    // Category Distribution
-    // -----------------------------
+    // ==========================================
+    // CATEGORY DISTRIBUTION
+    // ==========================================
 
     const categoryCounts = {
       "Phishing URL": 0,
@@ -107,44 +216,66 @@ for (let i = 6; i >= 0; i--) {
     scans.forEach((scan) => {
       const category = scan.category;
 
-      if (categoryCounts.hasOwnProperty(category)) {
+      if (
+        Object.prototype.hasOwnProperty.call(
+          categoryCounts,
+          category
+        )
+      ) {
         categoryCounts[category]++;
       } else {
         categoryCounts["Other Threats"]++;
       }
     });
 
-    // -----------------------------
-    // Response
-    // -----------------------------
+    // ==========================================
+    // RESPONSE
+    // ==========================================
 
     res.status(200).json({
       success: true,
 
       analytics: {
+        // Basic statistics
         totalScans,
         threatsDetected,
         suspiciousScans,
         safeScans,
 
+        // Scan type
         urlScans,
         messageScans,
 
+        // Risk
         averageRisk,
-
         riskDistribution,
 
+        // Categories
         categoryCounts,
 
+        // ML statistics
+        mlPredictions,
+        mlDetection,
+        averageMLConfidence,
+
+        // Activity
+        dailyActivity,
+
+        // Recent scans
         recentScans,
       },
     });
   } catch (error) {
-    console.error("Analytics error:", error);
+    console.error(
+      "Analytics error:",
+      error
+    );
 
     res.status(500).json({
       success: false,
-      message: "Unable to fetch analytics.",
+      message:
+        error.message ||
+        "Unable to fetch analytics.",
     });
   }
 };

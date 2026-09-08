@@ -6,6 +6,7 @@ function analyzeMessage(message) {
 
   const reasons = [];
   const detectedKeywords = [];
+  const detectedIndicators = [];
 
   // =========================================================
   // 1. SCAM / SPAM KEYWORDS
@@ -53,11 +54,22 @@ function analyzeMessage(message) {
   });
 
   if (detectedKeywords.length > 0) {
-    score += Math.min(detectedKeywords.length * 5, 30);
+    score += Math.min(
+      detectedKeywords.length * 5,
+      30
+    );
 
     reasons.push(
-      `Suspicious keywords detected: ${detectedKeywords.join(", ")}`
+      `Suspicious keywords detected: ${detectedKeywords.join(
+        ", "
+      )}`
     );
+
+    detectedIndicators.push({
+      type: "Suspicious Keywords",
+      label: "Suspicious keywords detected",
+      details: detectedKeywords.join(", "),
+    });
   }
 
   // =========================================================
@@ -84,11 +96,20 @@ function analyzeMessage(message) {
   );
 
   if (detectedUrgency.length > 0) {
-    score += Math.min(detectedUrgency.length * 8, 16);
+    score += Math.min(
+      detectedUrgency.length * 8,
+      16
+    );
 
     reasons.push(
       "Message uses urgent or pressure-based language."
     );
+
+    detectedIndicators.push({
+      type: "Urgency / Pressure",
+      label: "Urgent or pressure-based language",
+      details: detectedUrgency.join(", "),
+    });
   }
 
   // =========================================================
@@ -119,11 +140,20 @@ function analyzeMessage(message) {
   );
 
   if (detectedMoneyWords.length > 0) {
-    score += Math.min(detectedMoneyWords.length * 5, 15);
+    score += Math.min(
+      detectedMoneyWords.length * 5,
+      15
+    );
 
     reasons.push(
       "Message contains financial, payment, or reward-related content."
     );
+
+    detectedIndicators.push({
+      type: "Financial Content",
+      label: "Financial or monetary content detected",
+      details: detectedMoneyWords.join(", "),
+    });
   }
 
   // =========================================================
@@ -139,6 +169,13 @@ function analyzeMessage(message) {
     reasons.push(
       "Message contains a website or shortened link."
     );
+
+    detectedIndicators.push({
+      type: "Suspicious Link",
+      label: "Website or shortened link detected",
+      details:
+        "A URL or shortened URL is present in the message.",
+    });
   }
 
   // =========================================================
@@ -157,9 +194,10 @@ function analyzeMessage(message) {
     "verification code",
   ];
 
-  const detectedSensitiveWords = sensitiveWords.filter((word) =>
-    text.includes(word)
-  );
+  const detectedSensitiveWords =
+    sensitiveWords.filter((word) =>
+      text.includes(word)
+    );
 
   if (detectedSensitiveWords.length > 0) {
     score += 20;
@@ -167,6 +205,13 @@ function analyzeMessage(message) {
     reasons.push(
       "Message may be requesting sensitive authentication or financial information."
     );
+
+    detectedIndicators.push({
+      type: "Sensitive Information",
+      label:
+        "Sensitive authentication or financial information",
+      details: detectedSensitiveWords.join(", "),
+    });
   }
 
   // =========================================================
@@ -187,9 +232,10 @@ function analyzeMessage(message) {
     "enter your details",
   ];
 
-  const personalInfoDetected = personalInfoWords.some((phrase) =>
-    text.includes(phrase)
-  );
+  const personalInfoDetected =
+    personalInfoWords.some((phrase) =>
+      text.includes(phrase)
+    );
 
   if (personalInfoDetected) {
     score += 15;
@@ -197,6 +243,14 @@ function analyzeMessage(message) {
     reasons.push(
       "Message asks the recipient to share personal or sensitive information."
     );
+
+    detectedIndicators.push({
+      type: "Personal Information Request",
+      label:
+        "Personal or sensitive information requested",
+      details:
+        "The message asks the recipient to share information.",
+    });
   }
 
   // =========================================================
@@ -212,6 +266,13 @@ function analyzeMessage(message) {
     reasons.push(
       "Message contains a phone number or contact number."
     );
+
+    detectedIndicators.push({
+      type: "Phone Number",
+      label: "Phone number detected",
+      details:
+        "A contact number is present in the message.",
+    });
   }
 
   // =========================================================
@@ -227,6 +288,13 @@ function analyzeMessage(message) {
     reasons.push(
       "Message contains an email address."
     );
+
+    detectedIndicators.push({
+      type: "Email Address",
+      label: "Email address detected",
+      details:
+        "An email address is present in the message.",
+    });
   }
 
   // =========================================================
@@ -254,6 +322,14 @@ function analyzeMessage(message) {
     reasons.push(
       "Message pressures the recipient to contact or respond immediately."
     );
+
+    detectedIndicators.push({
+      type: "Contact Pressure",
+      label:
+        "Immediate contact or response requested",
+      details:
+        "The message pressures the recipient to call, reply, or contact someone.",
+    });
   }
 
   // =========================================================
@@ -269,6 +345,12 @@ function analyzeMessage(message) {
     reasons.push(
       "Message uses excessive exclamation marks."
     );
+
+    detectedIndicators.push({
+      type: "Excessive Punctuation",
+      label: "Excessive exclamation marks",
+      details: `${exclamationCount} exclamation marks detected.`,
+    });
   }
 
   // =========================================================
@@ -284,6 +366,12 @@ function analyzeMessage(message) {
     reasons.push(
       "Message uses excessive uppercase wording."
     );
+
+    detectedIndicators.push({
+      type: "Excessive Uppercase",
+      label: "Excessive uppercase wording",
+      details: `${uppercaseWords.length} uppercase words detected.`,
+    });
   }
 
   // =========================================================
@@ -338,6 +426,7 @@ function analyzeMessage(message) {
     confidence,
     reasons,
     detectedKeywords,
+    detectedIndicators,
   };
 }
 

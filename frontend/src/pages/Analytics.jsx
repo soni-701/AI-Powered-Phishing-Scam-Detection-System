@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+
 import {
   Activity,
   AlertTriangle,
@@ -12,21 +13,55 @@ import {
 } from "lucide-react";
 
 function Analytics() {
- const [analytics, setAnalytics] = useState({
-  totalScans: 0,
-  threatsDetected: 0,
-  suspiciousScans: 0,
-  safeScans: 0,
-  urlScans: 0,
-  messageScans: 0,
-  averageRisk: 0,
-  riskDistribution: {
-    safe: 0,
-    suspicious: 0,
-    highRisk: 0,
-  },
-  categoryCounts: {},
-});
+  const [analytics, setAnalytics] = useState({
+    totalScans: 0,
+    threatsDetected: 0,
+    suspiciousScans: 0,
+    safeScans: 0,
+    urlScans: 0,
+    messageScans: 0,
+    averageRisk: 0,
+
+    riskDistribution: {
+      safe: 0,
+      suspicious: 0,
+      highRisk: 0,
+    },
+
+    categoryCounts: {},
+
+    // ==========================================
+    // ML ANALYTICS
+    // ==========================================
+
+    mlPredictions: {
+      phishing: 0,
+      legitimate: 0,
+      spam: 0,
+      ham: 0,
+      unknown: 0,
+    },
+
+    mlDetection: {
+      url: {
+        total: 0,
+        phishing: 0,
+        legitimate: 0,
+      },
+
+      message: {
+        total: 0,
+        spam: 0,
+        ham: 0,
+      },
+    },
+
+    averageMLConfidence: 0,
+
+    dailyActivity: [],
+    recentScans: [],
+  });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -40,16 +75,17 @@ function Analytics() {
         setLoading(true);
         setError("");
 
-const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token");
 
-const response = await fetch(
-  "http://localhost:5000/api/analytics",
-  {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }
-);
+        const response = await fetch(
+          "http://localhost:5000/api/analytics",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
         const data = await response.json();
 
         if (!response.ok) {
@@ -58,12 +94,43 @@ const response = await fetch(
           );
         }
 
-        setAnalytics(data.analytics);
+        setAnalytics((previous) => ({
+          ...previous,
+          ...data.analytics,
+
+          riskDistribution: {
+            ...previous.riskDistribution,
+            ...(data.analytics.riskDistribution || {}),
+          },
+
+          categoryCounts:
+            data.analytics.categoryCounts || {},
+
+          mlPredictions: {
+            ...previous.mlPredictions,
+            ...(data.analytics.mlPredictions || {}),
+          },
+
+          mlDetection: {
+            ...previous.mlDetection,
+            ...(data.analytics.mlDetection || {}),
+          },
+
+          averageMLConfidence:
+            data.analytics.averageMLConfidence || 0,
+
+          dailyActivity:
+            data.analytics.dailyActivity || [],
+
+          recentScans:
+            data.analytics.recentScans || [],
+        }));
       } catch (err) {
         console.error("Analytics Error:", err);
 
         setError(
-          "Unable to connect to the backend. Make sure the backend is running on port 5000."
+          err.message ||
+            "Unable to connect to the backend. Make sure the backend is running on port 5000."
         );
       } finally {
         setLoading(false);
@@ -73,11 +140,6 @@ const response = await fetch(
     fetchAnalytics();
   }, []);
 
-  // ==========================================
-  // DEFAULT VALUES
-  // ==========================================
-
- 
   // ==========================================
   // RISK PERCENTAGES
   // ==========================================
@@ -114,7 +176,7 @@ const response = await fetch(
 
   const categories = useMemo(() => {
     const entries = Object.entries(
-      analytics.categoryCounts
+      analytics.categoryCounts || {}
     );
 
     const totalThreats = entries.reduce(
@@ -151,6 +213,16 @@ const response = await fetch(
   }, [analytics]);
 
   // ==========================================
+  // ML PREDICTION TOTAL
+  // ==========================================
+
+  const totalMLPredictions =
+    analytics.mlPredictions.phishing +
+    analytics.mlPredictions.legitimate +
+    analytics.mlPredictions.spam +
+    analytics.mlPredictions.ham;
+
+  // ==========================================
   // UI
   // ==========================================
 
@@ -159,7 +231,9 @@ const response = await fetch(
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-5 sm:py-8 lg:px-8">
 
-        {/* HEADER */}
+        {/* ==========================================
+            HEADER
+        ========================================== */}
 
         <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
 
@@ -188,14 +262,15 @@ const response = await fetch(
 
           </div>
 
-          <div className="w-full text-center rounded-lg border border-[#25445D] bg-[#0B1B2B] px-4 py-2.5 text-sm text-[#C4D0DB] md:w-auto">
+          <div className="w-full rounded-lg border border-[#25445D] bg-[#0B1B2B] px-4 py-2.5 text-center text-sm text-[#C4D0DB] md:w-auto">
             Live Database Data
           </div>
 
         </div>
 
-
-        {/* LOADING */}
+        {/* ==========================================
+            LOADING
+        ========================================== */}
 
         {loading && (
           <div className="mb-5 rounded-xl border border-[#1A344C] bg-[#0B1B2B]/90 p-5 text-center">
@@ -207,8 +282,9 @@ const response = await fetch(
           </div>
         )}
 
-
-        {/* ERROR */}
+        {/* ==========================================
+            ERROR
+        ========================================== */}
 
         {error && !loading && (
           <div className="mb-5 rounded-xl border border-[#5A202A] bg-[#2A1218] p-4">
@@ -220,8 +296,9 @@ const response = await fetch(
           </div>
         )}
 
-
-        {/* OVERVIEW CARDS */}
+        {/* ==========================================
+            OVERVIEW CARDS
+        ========================================== */}
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 
@@ -259,8 +336,9 @@ const response = await fetch(
 
         </div>
 
-
-        {/* MAIN ANALYTICS */}
+        {/* ==========================================
+            MAIN ANALYTICS
+        ========================================== */}
 
         <div className="mt-5 grid gap-5 xl:grid-cols-3">
 
@@ -297,8 +375,7 @@ const response = await fetch(
 
               </div>
 
-
-              {/* SIMPLE VISUAL BAR */}
+              {/* URL SCANS */}
 
               <div className="mt-6 rounded-xl border border-[#142C42] bg-[#081725] p-4 sm:p-5">
 
@@ -332,6 +409,7 @@ const response = await fetch(
 
                 </div>
 
+                {/* MESSAGE SCANS */}
 
                 <div className="mb-3 mt-6 flex justify-between text-xs text-[#607D94]">
 
@@ -369,7 +447,6 @@ const response = await fetch(
 
           </div>
 
-
           {/* RISK DISTRIBUTION */}
 
           <div className="rounded-xl border border-[#1A344C] bg-[#0B1B2B]/90">
@@ -383,7 +460,7 @@ const response = await fetch(
 
               <div className="flex justify-center overflow-hidden py-5">
 
-                <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-[14px] sm:h-44 sm:w-44 sm:border-[18px] border-[#32D583]">
+                <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-[14px] border-[#32D583] sm:h-44 sm:w-44 sm:border-[18px]">
 
                   <div className="text-center">
 
@@ -400,7 +477,6 @@ const response = await fetch(
                 </div>
 
               </div>
-
 
               <div className="space-y-4">
 
@@ -430,8 +506,9 @@ const response = await fetch(
 
         </div>
 
-
-        {/* THREAT CATEGORIES + SCANNER PERFORMANCE */}
+        {/* ==========================================
+            THREAT CATEGORIES + SCANNER PERFORMANCE
+        ========================================== */}
 
         <div className="mt-5 grid gap-5 lg:grid-cols-2">
 
@@ -460,15 +537,16 @@ const response = await fetch(
 
                 ))
               ) : (
+
                 <p className="py-8 text-center text-sm text-[#607D94]">
                   No threat category data available.
                 </p>
+
               )}
 
             </div>
 
           </div>
-
 
           {/* SCANNER PERFORMANCE */}
 
@@ -517,8 +595,353 @@ const response = await fetch(
 
         </div>
 
+        {/* ==========================================
+            AI / ML ANALYTICS
+        ========================================== */}
 
-        {/* DATABASE METRICS */}
+        <div className="mt-5 rounded-xl border border-[#1A344C] bg-[#0B1B2B]/90">
+
+          <PanelHeader
+            title="AI / ML Detection Analytics"
+            icon={<Bot size={17} />}
+          />
+
+          <div className="p-5">
+
+            {/* ML SUMMARY */}
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+              <MLStatCard
+                title="Phishing"
+                value={analytics.mlPredictions.phishing}
+                description="URL ML predictions"
+                icon={<ShieldAlert size={20} />}
+                type="red"
+              />
+
+              <MLStatCard
+                title="Legitimate"
+                value={analytics.mlPredictions.legitimate}
+                description="Safe URL predictions"
+                icon={<Shield size={20} />}
+                type="green"
+              />
+
+              <MLStatCard
+                title="Spam"
+                value={analytics.mlPredictions.spam}
+                description="Message ML predictions"
+                icon={<AlertTriangle size={20} />}
+                type="orange"
+              />
+
+              <MLStatCard
+                title="Ham"
+                value={analytics.mlPredictions.ham}
+                description="Safe message predictions"
+                icon={<CheckCircle size={20} />}
+                type="blue"
+              />
+
+            </div>
+
+            {/* ML DETAILS */}
+
+            <div className="mt-5 grid gap-5 md:grid-cols-3">
+
+              {/* AVERAGE CONFIDENCE */}
+
+              <div className="rounded-xl border border-[#17344D] bg-[#081725] p-5">
+
+                <div className="flex items-center gap-3">
+
+                  <div className="rounded-lg bg-[#0D2B40] p-3 text-[#42B9FF]">
+
+                    <Bot size={21} />
+
+                  </div>
+
+                  <div>
+
+                    <p className="text-xs text-[#607D94]">
+                      Average ML Confidence
+                    </p>
+
+                    <p className="mt-1 text-2xl font-bold">
+                      {analytics.averageMLConfidence}%
+                    </p>
+
+                  </div>
+
+                </div>
+
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#142C42]">
+
+                  <div
+                    className="h-full rounded-full bg-[#42B9FF]"
+                    style={{
+                      width: `${Math.min(
+                        analytics.averageMLConfidence,
+                        100
+                      )}%`,
+                    }}
+                  />
+
+                </div>
+
+              </div>
+
+              {/* URL ML */}
+
+              <div className="rounded-xl border border-[#17344D] bg-[#081725] p-5">
+
+                <div className="mb-4 flex items-center justify-between">
+
+                  <div>
+
+                    <p className="text-xs text-[#607D94]">
+                      URL ML Detection
+                    </p>
+
+                    <p className="mt-1 text-xl font-bold">
+                      {analytics.mlDetection.url.total}
+                    </p>
+
+                    <p className="text-xs text-[#526B82]">
+                      Total URL predictions
+                    </p>
+
+                  </div>
+
+                  <Shield
+                    size={22}
+                    className="text-[#42B9FF]"
+                  />
+
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+
+                  <div className="rounded-lg border border-[#3A1720] bg-[#2A1218] p-3">
+
+                    <p className="text-xs text-[#607D94]">
+                      Phishing
+                    </p>
+
+                    <p className="mt-1 text-lg font-bold text-[#FF4D5E]">
+                      {analytics.mlDetection.url.phishing}
+                    </p>
+
+                  </div>
+
+                  <div className="rounded-lg border border-[#173F35] bg-[#0B3028] p-3">
+
+                    <p className="text-xs text-[#607D94]">
+                      Legitimate
+                    </p>
+
+                    <p className="mt-1 text-lg font-bold text-[#32D583]">
+                      {analytics.mlDetection.url.legitimate}
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* MESSAGE ML */}
+
+              <div className="rounded-xl border border-[#17344D] bg-[#081725] p-5">
+
+                <div className="mb-4 flex items-center justify-between">
+
+                  <div>
+
+                    <p className="text-xs text-[#607D94]">
+                      Message ML Detection
+                    </p>
+
+                    <p className="mt-1 text-xl font-bold">
+                      {analytics.mlDetection.message.total}
+                    </p>
+
+                    <p className="text-xs text-[#526B82]">
+                      Total message predictions
+                    </p>
+
+                  </div>
+
+                  <Activity
+                    size={22}
+                    className="text-[#FF9F43]"
+                  />
+
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+
+                  <div className="rounded-lg border border-[#3A1720] bg-[#2A1218] p-3">
+
+                    <p className="text-xs text-[#607D94]">
+                      Spam
+                    </p>
+
+                    <p className="mt-1 text-lg font-bold text-[#FF4D5E]">
+                      {analytics.mlDetection.message.spam}
+                    </p>
+
+                  </div>
+
+                  <div className="rounded-lg border border-[#173F35] bg-[#0B3028] p-3">
+
+                    <p className="text-xs text-[#607D94]">
+                      Ham
+                    </p>
+
+                    <p className="mt-1 text-lg font-bold text-[#32D583]">
+                      {analytics.mlDetection.message.ham}
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+            {/* ML PREDICTION DISTRIBUTION */}
+
+            <div className="mt-5 rounded-xl border border-[#17344D] bg-[#081725] p-5">
+
+              <div className="mb-4 flex items-center justify-between">
+
+                <div>
+
+                  <p className="text-sm font-bold">
+                    ML Prediction Distribution
+                  </p>
+
+                  <p className="mt-1 text-xs text-[#607D94]">
+                    Predictions generated by the Python ML service
+                  </p>
+
+                </div>
+
+                <p className="text-sm font-bold text-[#42B9FF]">
+                  {totalMLPredictions} predictions
+                </p>
+
+              </div>
+
+              <div className="space-y-4">
+
+                <MLDistributionBar
+                  label="Phishing"
+                  value={analytics.mlPredictions.phishing}
+                  total={totalMLPredictions}
+                  color="bg-[#FF4D5E]"
+                />
+
+                <MLDistributionBar
+                  label="Legitimate"
+                  value={analytics.mlPredictions.legitimate}
+                  total={totalMLPredictions}
+                  color="bg-[#32D583]"
+                />
+
+                <MLDistributionBar
+                  label="Spam"
+                  value={analytics.mlPredictions.spam}
+                  total={totalMLPredictions}
+                  color="bg-[#FF9F43]"
+                />
+
+                <MLDistributionBar
+                  label="Ham"
+                  value={analytics.mlPredictions.ham}
+                  total={totalMLPredictions}
+                  color="bg-[#42B9FF]"
+                />
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* ==========================================
+            ML MODEL EVALUATION
+        ========================================== */}
+
+        <div className="mt-5 rounded-xl border border-[#1A344C] bg-[#0B1B2B]/90">
+
+          <PanelHeader
+            title="ML Model Evaluation"
+            icon={<Bot size={17} />}
+          />
+
+          <div className="p-5">
+
+            <div className="grid gap-5 md:grid-cols-2">
+
+              <ModelEvaluationCard
+                title="URL Phishing Model"
+                algorithm="Random Forest Classifier"
+                accuracy="99.57%"
+                dataset="UCI PhiUSIIL URL Dataset"
+                features="18 lexical URL features"
+                description="Classifies URLs as phishing or legitimate using URL structure and lexical characteristics."
+                type="blue"
+              />
+
+              <ModelEvaluationCard
+                title="Message Spam Model"
+                algorithm="Logistic Regression"
+                accuracy="97.40%"
+                dataset="UCI SMS Spam Collection"
+                features="TF-IDF text features"
+                description="Classifies messages as spam or ham using TF-IDF based text representation."
+                type="orange"
+              />
+
+            </div>
+
+            <div className="mt-5 rounded-xl border border-[#17344D] bg-[#081725] p-5">
+
+              <div className="flex items-start gap-3">
+
+                <div className="rounded-lg bg-[#0D2B40] p-2.5 text-[#42B9FF]">
+                  <Shield size={20} />
+                </div>
+
+                <div>
+                  <p className="text-sm font-bold">
+                    Hybrid Detection Architecture
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-[#607D94]">
+                    ML models provide prediction and confidence, while the
+                    rule-based layer adds explainable threat indicators.
+                    The backend combines both signals into the final risk assessment.
+                  </p>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* ==========================================
+            DATABASE METRICS
+        ========================================== */}
 
         <div className="mt-5 grid gap-5 md:grid-cols-3">
 
@@ -548,8 +971,9 @@ const response = await fetch(
 
         </div>
 
-
-        {/* FOOTER */}
+        {/* ==========================================
+            FOOTER
+        ========================================== */}
 
         <footer className="mt-8 border-t border-[#172D44] pt-6 text-center text-xs leading-5 text-[#526B82]">
 
@@ -562,7 +986,6 @@ const response = await fetch(
     </div>
   );
 }
-
 
 // =========================================================
 // ANALYTICS CARD
@@ -632,7 +1055,6 @@ function AnalyticsCard({
   );
 }
 
-
 // =========================================================
 // PANEL HEADER
 // =========================================================
@@ -652,7 +1074,6 @@ function PanelHeader({ title, icon }) {
     </div>
   );
 }
-
 
 // =========================================================
 // OVERVIEW BOX
@@ -686,7 +1107,6 @@ function OverviewBox({
   );
 }
 
-
 // =========================================================
 // DISTRIBUTION ITEM
 // =========================================================
@@ -718,7 +1138,6 @@ function DistributionItem({
     </div>
   );
 }
-
 
 // =========================================================
 // CATEGORY BAR
@@ -769,7 +1188,6 @@ function CategoryBar({
   );
 }
 
-
 // =========================================================
 // SCANNER PERFORMANCE
 // =========================================================
@@ -818,6 +1236,114 @@ function ScannerPerformance({
   );
 }
 
+// =========================================================
+// ML STAT CARD
+// =========================================================
+
+function MLStatCard({
+  title,
+  value,
+  description,
+  icon,
+  type,
+}) {
+  const styles = {
+    red: {
+      icon: "bg-[#3A1720] text-[#FF4D5E]",
+      value: "text-[#FF4D5E]",
+    },
+
+    green: {
+      icon: "bg-[#0B3028] text-[#32D583]",
+      value: "text-[#32D583]",
+    },
+
+    orange: {
+      icon: "bg-[#392514] text-[#FF9F43]",
+      value: "text-[#FF9F43]",
+    },
+
+    blue: {
+      icon: "bg-[#0D2B40] text-[#42B9FF]",
+      value: "text-[#42B9FF]",
+    },
+  };
+
+  return (
+    <div className="rounded-xl border border-[#17344D] bg-[#081725] p-4">
+
+      <div className="flex items-center justify-between">
+
+        <div
+          className={`rounded-lg p-2.5 ${styles[type].icon}`}
+        >
+          {icon}
+        </div>
+
+        <p
+          className={`text-2xl font-bold ${styles[type].value}`}
+        >
+          {value}
+        </p>
+
+      </div>
+
+      <p className="mt-4 text-sm font-bold">
+        {title}
+      </p>
+
+      <p className="mt-1 text-xs text-[#607D94]">
+        {description}
+      </p>
+
+    </div>
+  );
+}
+
+// =========================================================
+// ML DISTRIBUTION BAR
+// =========================================================
+
+function MLDistributionBar({
+  label,
+  value,
+  total,
+  color,
+}) {
+  const percentage =
+    total > 0
+      ? Math.round((value / total) * 100)
+      : 0;
+
+  return (
+    <div>
+
+      <div className="mb-2 flex items-center justify-between">
+
+        <span className="text-xs text-[#A7BAC9]">
+          {label}
+        </span>
+
+        <span className="text-xs font-bold">
+          {value} ({percentage}%)
+        </span>
+
+      </div>
+
+      <div className="h-2 overflow-hidden rounded-full bg-[#142C42]">
+
+        <div
+          className={`h-full rounded-full ${color}`}
+          style={{
+            width: `${percentage}%`,
+          }}
+        />
+
+      </div>
+
+    </div>
+  );
+}
 
 // =========================================================
 // METRIC CARD

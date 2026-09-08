@@ -1,25 +1,31 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+
 import {
   AlertTriangle,
   Calendar,
   CheckCircle,
   ChevronDown,
+  Download,
   Eye,
   FileWarning,
   Filter,
   Search,
   ShieldAlert,
   XCircle,
+  Brain,
+  BarChart3,
 } from "lucide-react";
 
 function ThreatReports() {
   const [reports, setReports] = useState([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
+  const [typeFilter, setTypeFilter] = useState("All");
   const [selectedReport, setSelectedReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showSwipeHint, setShowSwipeHint] = useState(true);
+
   const tableScrollRef = useRef(null);
 
   // ==========================================
@@ -32,16 +38,16 @@ function ThreatReports() {
         setLoading(true);
         setError("");
 
-       const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token");
 
-const response = await fetch(
-  "http://localhost:5000/api/reports",
-  {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }
-);
+        const response = await fetch(
+          "http://localhost:5000/api/reports",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         const data = await response.json();
 
@@ -71,12 +77,14 @@ const response = await fetch(
                   ? "Message"
                   : "URL",
 
-              target: report.target || "Unknown",
+              target:
+                report.target || "Unknown",
 
               category:
                 report.category || "Unknown",
 
-              risk: report.score || 0,
+              risk:
+                report.score || 0,
 
               status,
 
@@ -92,9 +100,21 @@ const response = await fetch(
                   })
                 : "Unknown",
 
-              confidence: report.confidence || 0,
+              confidence:
+                report.confidence || 0,
 
-              reasons: report.reasons || [],
+              // AI / ML prediction
+              prediction:
+                report.prediction || null,
+
+              // 18 URL ML features
+              features:
+                Array.isArray(report.features)
+                  ? report.features
+                  : [],
+
+              reasons:
+                report.reasons || [],
             };
           }
         );
@@ -107,7 +127,8 @@ const response = await fetch(
         );
 
         setError(
-          "Unable to connect to the backend. Make sure the backend is running on port 5000."
+          err.message ||
+            "Unable to connect to the backend."
         );
       } finally {
         setLoading(false);
@@ -127,9 +148,12 @@ const response = await fetch(
         filter === "All" ||
         report.status === filter;
 
-      const query = search
-        .toLowerCase()
-        .trim();
+      const matchesType =
+        typeFilter === "All" ||
+        report.type === typeFilter;
+
+      const query =
+        search.toLowerCase().trim();
 
       const matchesSearch =
         report.target
@@ -147,17 +171,24 @@ const response = await fetch(
 
       return (
         matchesFilter &&
+        matchesType &&
         matchesSearch
       );
     });
-  }, [reports, search, filter]);
+  }, [
+    reports,
+    search,
+    filter,
+    typeFilter,
+  ]);
 
   // ==========================================
   // MOBILE TABLE SWIPE HINT
   // ==========================================
 
   useEffect(() => {
-    const container = tableScrollRef.current;
+    const container =
+      tableScrollRef.current;
 
     if (!container) return;
 
@@ -167,31 +198,177 @@ const response = await fetch(
       }
     };
 
-    container.addEventListener("scroll", handleScroll, { passive: true });
+    container.addEventListener(
+      "scroll",
+      handleScroll,
+      { passive: true }
+    );
 
     return () => {
-      container.removeEventListener("scroll", handleScroll);
+      container.removeEventListener(
+        "scroll",
+        handleScroll
+      );
     };
-  }, [loading, error, filteredReports.length]);
+  }, [
+    loading,
+    error,
+    filteredReports.length,
+  ]);
 
   // ==========================================
   // SUMMARY COUNTS
   // ==========================================
 
-  const detected = reports.filter(
-    (report) =>
-      report.status === "Detected"
-  ).length;
+  const detected =
+    reports.filter(
+      (report) =>
+        report.status === "Detected"
+    ).length;
 
-  const suspicious = reports.filter(
-    (report) =>
-      report.status === "Suspicious"
-  ).length;
+  const suspicious =
+    reports.filter(
+      (report) =>
+        report.status === "Suspicious"
+    ).length;
 
-  const safe = reports.filter(
-    (report) =>
-      report.status === "Safe"
-  ).length;
+  const safe =
+    reports.filter(
+      (report) =>
+        report.status === "Safe"
+    ).length;
+
+  // ==========================================
+  // EXPORT CSV
+  // ==========================================
+
+  const exportCSV = () => {
+    if (filteredReports.length === 0) {
+      return;
+    }
+
+    const headers = [
+      "Report ID",
+      "Type",
+      "Target",
+      "Category",
+      "Risk Score",
+      "Status",
+      "Confidence",
+      "Prediction",
+      "Date",
+      "Detection Findings",
+    ];
+
+    const rows = filteredReports.map(
+      (report) => [
+        report.id,
+        report.type,
+        report.target,
+        report.category,
+        report.risk,
+        report.status,
+        `${report.confidence}%`,
+        report.prediction || "N/A",
+        report.date,
+        report.reasons.join(" | "),
+      ]
+    );
+
+    const csvContent = [
+      headers,
+      ...rows,
+    ]
+      .map((row) =>
+        row
+          .map((value) => {
+            const safeValue =
+              String(value ?? "");
+
+            return `"${safeValue.replace(
+              /"/g,
+              '""'
+            )}"`;
+          })
+          .join(",")
+      )
+      .join("\n");
+
+    const blob = new Blob(
+      [csvContent],
+      {
+        type: "text/csv;charset=utf-8;",
+      }
+    );
+
+    const url =
+      URL.createObjectURL(blob);
+
+    const link =
+      document.createElement("a");
+
+    link.href = url;
+
+    link.download =
+      `threat-reports-${new Date()
+        .toISOString()
+        .slice(0, 10)}.csv`;
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  };
+
+  // ==========================================
+  // URL FEATURE NAMES
+  // ==========================================
+
+  const featureNames = [
+    "URL Length",
+    "Hostname Length",
+    "Path Length",
+    "Dot Count",
+    "Hyphen Count",
+    "Slash Count",
+    "Question Mark Count",
+    "Equal Sign Count",
+    "At Symbol Count",
+    "Percent Count",
+    "HTTPS",
+    "HTTP",
+    "IP Address",
+    "Suspicious Word Count",
+    "Subdomain Count",
+    "Digit Count",
+    "Letter Count",
+    "Shortened URL",
+  ];
+
+  // ==========================================
+  // FORMAT FEATURE VALUE
+  // ==========================================
+
+  const formatFeatureValue = (
+    name,
+    value
+  ) => {
+    if (
+      name === "HTTPS" ||
+      name === "HTTP" ||
+      name === "IP Address" ||
+      name === "Shortened URL"
+    ) {
+      return value === 1
+        ? "Yes"
+        : "No";
+    }
+
+    return value;
+  };
 
   // ==========================================
   // UI
@@ -224,15 +401,31 @@ const response = await fetch(
               </h1>
 
               <p className="mt-1 text-sm text-[#607D94]">
-                Review and investigate detected phishing and scam threats
+                Review your complete scan history and investigate phishing and scam threats
               </p>
 
             </div>
 
           </div>
 
-        </div>
+          {/* EXPORT BUTTON */}
 
+          <button
+            onClick={exportCSV}
+            disabled={
+              loading ||
+              filteredReports.length === 0
+            }
+            className="flex items-center justify-center gap-2 rounded-xl bg-[#42B9FF] px-5 py-3 text-sm font-bold text-[#06121C] transition hover:bg-[#70CBFF] disabled:cursor-not-allowed disabled:opacity-40"
+          >
+
+            <Download size={18} />
+
+            Export CSV
+
+          </button>
+
+        </div>
 
         {/* SUMMARY */}
 
@@ -276,7 +469,6 @@ const response = await fetch(
 
         </div>
 
-
         {/* REPORT TABLE */}
 
         <div className="mt-6 rounded-2xl border border-[#1A344C] bg-[#0B1B2B]/90">
@@ -305,51 +497,84 @@ const response = await fetch(
 
             </div>
 
+            {/* FILTERS */}
 
-            {/* FILTER */}
+            <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
 
-            <div className="relative">
+              {/* RISK FILTER */}
 
-              <Filter
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#607D94]"
-              />
+              <div className="relative">
 
-              <select
-                value={filter}
-                onChange={(e) =>
-                  setFilter(e.target.value)
-                }
-                className="appearance-none rounded-xl border border-[#25445D] bg-[#081725] py-3 pl-10 pr-10 text-sm text-[#C4D0DB] outline-none focus:border-[#42B9FF]"
-              >
+                <Filter
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#607D94]"
+                />
 
-                <option value="All">
-                  All Reports
-                </option>
+                <select
+                  value={filter}
+                  onChange={(e) =>
+                    setFilter(e.target.value)
+                  }
+                  className="w-full appearance-none rounded-xl border border-[#25445D] bg-[#081725] py-3 pl-10 pr-10 text-sm text-[#C4D0DB] outline-none focus:border-[#42B9FF] sm:w-auto"
+                >
+                  <option value="All">
+                    All Risk Levels
+                  </option>
 
-                <option value="Detected">
-                  Detected
-                </option>
+                  <option value="Detected">
+                    Detected
+                  </option>
 
-                <option value="Suspicious">
-                  Suspicious
-                </option>
+                  <option value="Suspicious">
+                    Suspicious
+                  </option>
 
-                <option value="Safe">
-                  Safe
-                </option>
+                  <option value="Safe">
+                    Safe
+                  </option>
+                </select>
 
-              </select>
+                <ChevronDown
+                  size={16}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#607D94]"
+                />
 
-              <ChevronDown
-                size={16}
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#607D94]"
-              />
+              </div>
+
+              {/* TYPE FILTER */}
+
+              <div className="relative">
+
+                <select
+                  value={typeFilter}
+                  onChange={(e) =>
+                    setTypeFilter(e.target.value)
+                  }
+                  className="w-full appearance-none rounded-xl border border-[#25445D] bg-[#081725] py-3 pl-4 pr-10 text-sm text-[#C4D0DB] outline-none focus:border-[#42B9FF] sm:w-auto"
+                >
+                  <option value="All">
+                    All Scan Types
+                  </option>
+
+                  <option value="URL">
+                    URL Scans
+                  </option>
+
+                  <option value="Message">
+                    Message Scans
+                  </option>
+                </select>
+
+                <ChevronDown
+                  size={16}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#607D94]"
+                />
+
+              </div>
 
             </div>
 
           </div>
-
 
           {/* LOADING */}
 
@@ -363,7 +588,6 @@ const response = await fetch(
             </div>
           )}
 
-
           {/* ERROR */}
 
           {error && !loading && (
@@ -376,11 +600,14 @@ const response = await fetch(
             </div>
           )}
 
-
           {/* TABLE */}
 
           {!loading && !error && (
-            <div className="overflow-x-auto">
+
+            <div
+              ref={tableScrollRef}
+              className="overflow-x-auto"
+            >
 
               <table className="w-full min-w-[900px]">
 
@@ -420,7 +647,6 @@ const response = await fetch(
 
                 </thead>
 
-
                 <tbody>
 
                   {filteredReports.map(
@@ -445,7 +671,6 @@ const response = await fetch(
 
                         </td>
 
-
                         {/* TYPE */}
 
                         <td className="px-5 py-4">
@@ -455,7 +680,6 @@ const response = await fetch(
                           </span>
 
                         </td>
-
 
                         {/* CATEGORY */}
 
@@ -467,7 +691,6 @@ const response = await fetch(
 
                         </td>
 
-
                         {/* RISK */}
 
                         <td className="px-5 py-4">
@@ -478,7 +701,6 @@ const response = await fetch(
 
                         </td>
 
-
                         {/* STATUS */}
 
                         <td className="px-5 py-4">
@@ -488,7 +710,6 @@ const response = await fetch(
                           />
 
                         </td>
-
 
                         {/* DATE */}
 
@@ -506,7 +727,6 @@ const response = await fetch(
 
                         </td>
 
-
                         {/* ACTION */}
 
                         <td className="px-5 py-4">
@@ -520,9 +740,7 @@ const response = await fetch(
                             className="flex items-center gap-2 rounded-lg border border-[#25445D] px-3 py-2 text-xs font-semibold text-[#A7BAC9] transition hover:border-[#42B9FF] hover:bg-[#102A43] hover:text-white"
                           >
 
-                            <Eye
-                              size={15}
-                            />
+                            <Eye size={15} />
 
                             View
 
@@ -538,7 +756,6 @@ const response = await fetch(
                 </tbody>
 
               </table>
-
 
               {/* NO REPORTS */}
 
@@ -564,10 +781,10 @@ const response = await fetch(
               )}
 
             </div>
+
           )}
 
         </div>
-
 
         {/* DATABASE INFO */}
 
@@ -588,14 +805,15 @@ const response = await fetch(
 
       </div>
 
-
-      {/* DETAIL MODAL */}
+      {/* ==========================================
+          DETAIL MODAL
+      ========================================== */}
 
       {selectedReport && (
 
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
 
-          <div className="w-full max-w-lg rounded-2xl border border-[#25445D] bg-[#091624] shadow-2xl">
+          <div className="w-full max-w-2xl rounded-2xl border border-[#25445D] bg-[#091624] shadow-2xl">
 
             {/* MODAL HEADER */}
 
@@ -626,46 +844,199 @@ const response = await fetch(
 
             </div>
 
-
             {/* MODAL CONTENT */}
 
-            <div className="max-h-[70vh] space-y-5 overflow-y-auto p-5">
+            <div className="max-h-[75vh] space-y-5 overflow-y-auto p-5">
 
-              <DetailRow
-                label="Target"
-                value={selectedReport.target}
-              />
+              {/* BASIC DETAILS */}
 
-              <DetailRow
-                label="Type"
-                value={selectedReport.type}
-              />
+              <div>
 
-              <DetailRow
-                label="Category"
-                value={selectedReport.category}
-              />
+                <div className="mb-3 flex items-center gap-2">
 
-              <DetailRow
-                label="Risk Score"
-                value={`${selectedReport.risk} / 100`}
-              />
+                  <ShieldAlert
+                    size={17}
+                    className="text-[#42B9FF]"
+                  />
 
-              <DetailRow
-                label="Status"
-                value={selectedReport.status}
-              />
+                  <h3 className="text-sm font-bold">
+                    Scan Details
+                  </h3>
 
-              <DetailRow
-  label="Detection Confidence"
-  value={`${selectedReport.confidence}%`}
-/>
+                </div>
 
-              <DetailRow
-                label="Detected"
-                value={selectedReport.date}
-              />
+                <div className="grid gap-4 sm:grid-cols-2">
 
+                  <DetailRow
+                    label="Target"
+                    value={selectedReport.target}
+                  />
+
+                  <DetailRow
+                    label="Type"
+                    value={selectedReport.type}
+                  />
+
+                  <DetailRow
+                    label="Category"
+                    value={selectedReport.category}
+                  />
+
+                  <DetailRow
+                    label="Risk Score"
+                    value={`${selectedReport.risk} / 100`}
+                  />
+
+                  <DetailRow
+                    label="Status"
+                    value={selectedReport.status}
+                  />
+
+                  <DetailRow
+                    label="Detection Confidence"
+                    value={`${selectedReport.confidence}%`}
+                  />
+
+                  <DetailRow
+                    label="Detected"
+                    value={selectedReport.date}
+                  />
+
+                </div>
+
+              </div>
+
+              {/* AI / ML ANALYSIS */}
+
+              <div className="rounded-xl border border-[#174D6E] bg-[#0A2437] p-4">
+
+                <div className="mb-4 flex items-center gap-2">
+
+                  <Brain
+                    size={18}
+                    className="text-[#42B9FF]"
+                  />
+
+                  <div>
+
+                    <h3 className="text-sm font-bold">
+                      AI / ML Analysis
+                    </h3>
+
+                    <p className="text-[10px] text-[#607D94]">
+                      Machine learning prediction
+                    </p>
+
+                  </div>
+
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+
+                  <div className="rounded-lg border border-[#17344D] bg-[#081725] p-3">
+
+                    <p className="text-[10px] uppercase tracking-wide text-[#607D94]">
+                      Prediction
+                    </p>
+
+                    <p
+                      className={`mt-2 text-lg font-bold uppercase ${
+                        selectedReport.prediction ===
+                        "phishing"
+                          ? "text-[#FF4D5E]"
+                          : selectedReport.prediction ===
+                            "spam"
+                          ? "text-[#FF9F43]"
+                          : "text-[#32D583]"
+                      }`}
+                    >
+                      {selectedReport.prediction ||
+                        "Not available"}
+                    </p>
+
+                  </div>
+
+                  <div className="rounded-lg border border-[#17344D] bg-[#081725] p-3">
+
+                    <p className="text-[10px] uppercase tracking-wide text-[#607D94]">
+                      ML Confidence
+                    </p>
+
+                    <p className="mt-2 text-lg font-bold text-[#42B9FF]">
+                      {selectedReport.confidence}%
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* URL FEATURES */}
+
+              {selectedReport.type === "URL" &&
+                selectedReport.features?.length > 0 && (
+
+                <div className="rounded-xl border border-[#1A344C] bg-[#0B1B2B]">
+
+                  <div className="flex items-center gap-2 border-b border-[#17344D] p-4">
+
+                    <BarChart3
+                      size={17}
+                      className="text-[#42B9FF]"
+                    />
+
+                    <div>
+
+                      <h3 className="text-sm font-bold">
+                        URL Feature Analysis
+                      </h3>
+
+                      <p className="text-[10px] text-[#607D94]">
+                        Features extracted for ML classification
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  <div className="grid gap-2 p-4 sm:grid-cols-2">
+
+                    {featureNames.map(
+                      (name, index) => {
+
+                        const value =
+                          selectedReport
+                            .features[index];
+
+                        return (
+                          <div
+                            key={name}
+                            className="flex items-center justify-between rounded-lg border border-[#17344D] bg-[#081725] px-3 py-2.5"
+                          >
+
+                            <span className="text-xs text-[#8BA0B2]">
+                              {name}
+                            </span>
+
+                            <span className="ml-3 text-xs font-bold text-[#C4D0DB]">
+                              {value !== undefined
+                                ? formatFeatureValue(
+                                    name,
+                                    value
+                                  )
+                                : "-"}
+                            </span>
+
+                          </div>
+                        );
+                      }
+                    )}
+
+                  </div>
+
+                </div>
+              )}
 
               {/* DETECTION FINDINGS */}
 
@@ -673,9 +1044,18 @@ const response = await fetch(
 
                 <div>
 
-                  <p className="mb-2 text-xs text-[#607D94]">
-                    Detection Findings
-                  </p>
+                  <div className="mb-3 flex items-center gap-2">
+
+                    <AlertTriangle
+                      size={17}
+                      className="text-[#FF9F43]"
+                    />
+
+                    <p className="text-sm font-bold">
+                      Detection Findings
+                    </p>
+
+                  </div>
 
                   <div className="space-y-2">
 
@@ -686,7 +1066,12 @@ const response = await fetch(
                           key={index}
                           className="rounded-lg border border-[#17344D] bg-[#081725] p-3 text-sm text-[#C4D0DB]"
                         >
-                          • {reason}
+                          <span className="mr-2 text-[#42B9FF]">
+                            •
+                          </span>
+
+                          {reason}
+
                         </div>
 
                       )
@@ -699,7 +1084,6 @@ const response = await fetch(
               )}
 
             </div>
-
 
             {/* MODAL FOOTER */}
 
@@ -725,7 +1109,6 @@ const response = await fetch(
     </div>
   );
 }
-
 
 // =========================================================
 // SUMMARY CARD
@@ -773,7 +1156,6 @@ function SummaryCard({
   );
 }
 
-
 // =========================================================
 // RISK BADGE
 // =========================================================
@@ -802,7 +1184,6 @@ function RiskBadge({ score }) {
     </span>
   );
 }
-
 
 // =========================================================
 // STATUS BADGE
@@ -845,13 +1226,14 @@ function StatusBadge({ status }) {
   );
 }
 
-
 // =========================================================
 // DETAIL ROW
 // =========================================================
 
-function DetailRow({ label, value }) {
-
+function DetailRow({
+  label,
+  value,
+}) {
   return (
     <div>
 

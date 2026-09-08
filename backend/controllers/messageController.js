@@ -15,21 +15,24 @@ const scanMessage = async (req, res) => {
 
     const cleanedMessage = message.trim();
 
-    // -----------------------------------
+    // ==========================================
     // 1. PYTHON ML PREDICTION
-    // -----------------------------------
+    // ==========================================
 
-    const mlResult = await analyzeMessageWithML(cleanedMessage);
+    const mlResult = await analyzeMessageWithML(
+      cleanedMessage
+    );
 
-    // -----------------------------------
-    // 2. EXISTING RULE-BASED ANALYSIS
-    // -----------------------------------
+    // ==========================================
+    // 2. RULE-BASED ANALYSIS
+    // ==========================================
 
-    const ruleResult = analyzeMessage(cleanedMessage);
+    const ruleResult =
+      analyzeMessage(cleanedMessage);
 
-    // -----------------------------------
+    // ==========================================
     // 3. COMBINE ML + RULE RESULTS
-    // -----------------------------------
+    // ==========================================
 
     let score = 5;
     let level = "SAFE";
@@ -47,7 +50,10 @@ const scanMessage = async (req, res) => {
       );
     }
 
-    score = Math.min(Math.max(score, 0), 98);
+    score = Math.min(
+      Math.max(score, 0),
+      98
+    );
 
     if (score >= 60) {
       level = "HIGH RISK";
@@ -57,9 +63,9 @@ const scanMessage = async (req, res) => {
       category = "Suspicious Message";
     }
 
-    // -----------------------------------
-    // 4. SAVE RESULT IN MONGODB
-    // -----------------------------------
+    // ==========================================
+    // 4. DETECTION REASONS
+    // ==========================================
 
     const reasons = [
       `ML prediction: ${mlResult.prediction}`,
@@ -67,42 +73,75 @@ const scanMessage = async (req, res) => {
       ...ruleResult.reasons,
     ];
 
+    // ==========================================
+    // 5. SAVE RESULT IN MONGODB
+    // ==========================================
+
     const scan = await Scan.create({
       userId: req.userId,
+
       type: "MESSAGE",
+
       target: cleanedMessage,
+
       score,
+
       level,
+
       category,
-      confidence: mlResult.confidence,
+
+      confidence:
+        mlResult.confidence,
+
+      // NEW
+      prediction:
+        mlResult.prediction,
+
+      // MESSAGE DOES NOT USE URL FEATURES
+      features: [],
+
       reasons,
     });
 
-    // -----------------------------------
-    // 5. SEND RESULT TO FRONTEND
-    // -----------------------------------
+    // ==========================================
+    // 6. SEND RESULT TO FRONTEND
+    // ==========================================
 
     res.status(200).json({
       success: true,
 
       result: {
         message: cleanedMessage,
+
         score,
+
         level,
+
         category,
-        confidence: mlResult.confidence,
-        prediction: mlResult.prediction,
+
+        confidence:
+          mlResult.confidence,
+
+        prediction:
+          mlResult.prediction,
+
         reasons,
       },
 
       scanId: scan._id,
     });
+
   } catch (error) {
-    console.error("Message scanning error:", error);
+    console.error(
+      "Message scanning error:",
+      error
+    );
 
     res.status(500).json({
       success: false,
-      message: "Unable to analyze message.",
+      message:
+        error.message ||
+        "Unable to analyze message.",
     });
   }
 };

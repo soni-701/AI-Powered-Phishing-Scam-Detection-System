@@ -5,9 +5,15 @@ const {
 } = require("../controllers/messageController");
 
 const protect = require("../middleware/authMiddleware");
+const scanRateLimiter = require("../middleware/rateLimitMiddleware");
 
 const router = express.Router();
 
-router.post("/", protect, scanMessage);
+router.post(
+  "/",
+  protect,
+  scanRateLimiter,
+  scanMessage
+);
 
 module.exports = router;

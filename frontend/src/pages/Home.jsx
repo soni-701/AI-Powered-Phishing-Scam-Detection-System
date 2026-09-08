@@ -1463,9 +1463,29 @@ const userInitials = userName
                         </p>
 
                         <p className="text-xs text-[#607D94]">
-                          Rule-based threat analysis
+                          Hybrid AI + Rule-Based Threat Detection
                         </p>
 
+                      </div>
+
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-2 gap-2 text-[10px] text-[#8BA0B2]">
+
+                      <div className="rounded-md border border-[#17344D] bg-[#081725] px-3 py-2">
+                        ✓ Message ML Detection
+                      </div>
+
+                      <div className="rounded-md border border-[#17344D] bg-[#081725] px-3 py-2">
+                        ✓ URL ML Detection
+                      </div>
+
+                      <div className="rounded-md border border-[#17344D] bg-[#081725] px-3 py-2">
+                        ✓ Explainable Rule Analysis
+                      </div>
+
+                      <div className="rounded-md border border-[#17344D] bg-[#081725] px-3 py-2">
+                        ✓ Real-time Risk Scoring
                       </div>
 
                     </div>
