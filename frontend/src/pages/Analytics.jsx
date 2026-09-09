@@ -1395,4 +1395,83 @@ function MetricCard({
   );
 }
 
+
+// =========================================================
+// ML MODEL EVALUATION CARD
+// =========================================================
+
+function ModelEvaluationCard({
+  title,
+  algorithm,
+  accuracy,
+  dataset,
+  features,
+  description,
+  type,
+}) {
+  const styles = {
+    blue: {
+      icon: "bg-[#0D2B40] text-[#42B9FF]",
+      accuracy: "text-[#42B9FF]",
+    },
+    orange: {
+      icon: "bg-[#392514] text-[#FF9F43]",
+      accuracy: "text-[#FF9F43]",
+    },
+  };
+
+  const currentStyle = styles[type] || styles.blue;
+
+  return (
+    <div className="rounded-xl border border-[#17344D] bg-[#081725] p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className={`rounded-lg p-3 ${currentStyle.icon}`}>
+          <Bot size={21} />
+        </div>
+
+        <p className={`text-2xl font-bold ${currentStyle.accuracy}`}>
+          {accuracy}
+        </p>
+      </div>
+
+      <h4 className="mt-4 text-sm font-bold">
+        {title}
+      </h4>
+
+      <p className="mt-1 text-xs leading-5 text-[#607D94]">
+        {description}
+      </p>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-lg border border-[#17344D] bg-[#0B1B2B] p-3">
+          <p className="text-[10px] uppercase tracking-wider text-[#526B82]">
+            Algorithm
+          </p>
+          <p className="mt-1 text-xs font-bold text-[#C4D0DB]">
+            {algorithm}
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-[#17344D] bg-[#0B1B2B] p-3">
+          <p className="text-[10px] uppercase tracking-wider text-[#526B82]">
+            Dataset
+          </p>
+          <p className="mt-1 text-xs font-bold text-[#C4D0DB]">
+            {dataset}
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-[#17344D] bg-[#0B1B2B] p-3 sm:col-span-2">
+          <p className="text-[10px] uppercase tracking-wider text-[#526B82]">
+            Feature Representation
+          </p>
+          <p className="mt-1 text-xs font-bold text-[#C4D0DB]">
+            {features}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default Analytics;

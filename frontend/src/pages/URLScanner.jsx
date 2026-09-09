@@ -36,19 +36,58 @@ function URLScanner() {
       return;
     }
 
+    // =========================================
+    // NORMALIZE + VALIDATE URL INPUT
+    // =========================================
+
+    let inputUrl = url.trim();
+
+    // If the user enters a domain without a protocol,
+    // automatically use HTTPS.
+    if (
+      !inputUrl.startsWith("http://") &&
+      !inputUrl.startsWith("https://")
+    ) {
+      inputUrl = `https://${inputUrl}`;
+    }
+
     let validUrl;
 
     try {
-      validUrl = new URL(url);
+      validUrl = new URL(inputUrl);
     } catch {
       setError(
-        "Please enter a valid URL, for example: https://example.com"
+        "Please enter a valid URL or domain, for example: youtube.com"
       );
       return;
     }
 
     if (!["http:", "https:"].includes(validUrl.protocol)) {
       setError("Only HTTP and HTTPS URLs are supported.");
+      return;
+    }
+
+    // Require a real hostname such as youtube.com or www.youtube.com.
+    // This prevents inputs like "hello" from being accepted as
+    // https://hello.
+    const hostname = validUrl.hostname;
+
+    const isIPv4 =
+      /^(?:\d{1,3}\.){3}\d{1,3}$/.test(hostname);
+
+    const isValidHostname =
+      isIPv4 ||
+      (
+        hostname.includes(".") &&
+        !hostname.startsWith(".") &&
+        !hostname.endsWith(".") &&
+        !hostname.includes("..")
+      );
+
+    if (!isValidHostname) {
+      setError(
+        "Please enter a valid domain, for example: youtube.com"
+      );
       return;
     }
 
@@ -68,7 +107,7 @@ function URLScanner() {
           },
 
           body: JSON.stringify({
-            url: url.trim(),
+            url: inputUrl,
           }),
         }
       );

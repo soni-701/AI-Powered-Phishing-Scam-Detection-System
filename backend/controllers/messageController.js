@@ -6,7 +6,11 @@ const scanMessage = async (req, res) => {
   try {
     const { message } = req.body;
 
-    if (!message || !message.trim()) {
+    // =========================================
+    // 1. BASIC VALIDATION
+    // =========================================
+
+    if (typeof message !== "string" || !message.trim()) {
       return res.status(400).json({
         success: false,
         message: "Message is required.",
@@ -15,24 +19,38 @@ const scanMessage = async (req, res) => {
 
     const cleanedMessage = message.trim();
 
-    // ==========================================
-    // 1. PYTHON ML PREDICTION
-    // ==========================================
+    // =========================================
+    // 2. MESSAGE LENGTH VALIDATION
+    // =========================================
+
+    const MAX_MESSAGE_LENGTH = 10000;
+
+    if (cleanedMessage.length > MAX_MESSAGE_LENGTH) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Message is too long. Please keep it under 10,000 characters.",
+      });
+    }
+
+    // =========================================
+    // 3. PYTHON ML PREDICTION
+    // =========================================
 
     const mlResult = await analyzeMessageWithML(
       cleanedMessage
     );
 
-    // ==========================================
-    // 2. RULE-BASED ANALYSIS
-    // ==========================================
+    // =========================================
+    // 4. RULE-BASED ANALYSIS
+    // =========================================
 
     const ruleResult =
       analyzeMessage(cleanedMessage);
 
-    // ==========================================
-    // 3. COMBINE ML + RULE RESULTS
-    // ==========================================
+    // =========================================
+    // 5. COMBINE ML + RULE RESULTS
+    // =========================================
 
     let score = 5;
     let level = "SAFE";
@@ -63,9 +81,9 @@ const scanMessage = async (req, res) => {
       category = "Suspicious Message";
     }
 
-    // ==========================================
-    // 4. DETECTION REASONS
-    // ==========================================
+    // =========================================
+    // 6. DETECTION REASONS
+    // =========================================
 
     const reasons = [
       `ML prediction: ${mlResult.prediction}`,
@@ -73,9 +91,9 @@ const scanMessage = async (req, res) => {
       ...ruleResult.reasons,
     ];
 
-    // ==========================================
-    // 5. SAVE RESULT IN MONGODB
-    // ==========================================
+    // =========================================
+    // 7. SAVE RESULT IN MONGODB
+    // =========================================
 
     const scan = await Scan.create({
       userId: req.userId,
@@ -90,22 +108,19 @@ const scanMessage = async (req, res) => {
 
       category,
 
-      confidence:
-        mlResult.confidence,
+      confidence: mlResult.confidence,
 
-      // NEW
-      prediction:
-        mlResult.prediction,
+      prediction: mlResult.prediction,
 
-      // MESSAGE DOES NOT USE URL FEATURES
+      // Message scans do not use URL features
       features: [],
 
       reasons,
     });
 
-    // ==========================================
-    // 6. SEND RESULT TO FRONTEND
-    // ==========================================
+    // =========================================
+    // 8. SEND RESULT TO FRONTEND
+    // =========================================
 
     res.status(200).json({
       success: true,
@@ -119,13 +134,14 @@ const scanMessage = async (req, res) => {
 
         category,
 
-        confidence:
-          mlResult.confidence,
+        confidence: mlResult.confidence,
 
-        prediction:
-          mlResult.prediction,
+        prediction: mlResult.prediction,
 
         reasons,
+
+        detectedIndicators:
+          ruleResult.detectedIndicators || [],
       },
 
       scanId: scan._id,
