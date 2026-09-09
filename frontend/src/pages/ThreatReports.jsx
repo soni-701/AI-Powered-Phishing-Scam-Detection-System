@@ -247,6 +247,8 @@ function ThreatReports() {
       return;
     }
 
+    const generatedAt = new Date().toLocaleString("en-IN");
+
     const headers = [
       "Report ID",
       "Type",
@@ -258,6 +260,7 @@ function ThreatReports() {
       "Prediction",
       "Date",
       "Detection Findings",
+      "Generated At",
     ];
 
     const rows = filteredReports.map(
@@ -272,6 +275,7 @@ function ThreatReports() {
         report.prediction || "N/A",
         report.date,
         report.reasons.join(" | "),
+        generatedAt,
       ]
     );
 
@@ -282,45 +286,94 @@ function ThreatReports() {
       .map((row) =>
         row
           .map((value) => {
-            const safeValue =
-              String(value ?? "");
+            const safeValue = String(value ?? "");
 
-            return `"${safeValue.replace(
-              /"/g,
-              '""'
-            )}"`;
+            return `"${safeValue.replace(/"/g, '""')}"`;
           })
           .join(",")
       )
-      .join("\n");
+      .join("\r\n");
 
+    // UTF-8 BOM helps Excel correctly recognize the CSV encoding.
     const blob = new Blob(
-      [csvContent],
+      ["\uFEFF", csvContent],
       {
         type: "text/csv;charset=utf-8;",
       }
     );
 
-    const url =
-      URL.createObjectURL(blob);
-
-    const link =
-      document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
 
     link.href = url;
-
-    link.download =
-      `threat-reports-${new Date()
-        .toISOString()
-        .slice(0, 10)}.csv`;
+    link.download = `threat-reports-${new Date()
+      .toISOString()
+      .slice(0, 10)}.csv`;
 
     document.body.appendChild(link);
-
     link.click();
-
     document.body.removeChild(link);
 
     URL.revokeObjectURL(url);
+  };
+
+  // ==========================================
+  // DOWNLOAD PDF
+  // ==========================================
+
+  const downloadPDF = async (report) => {
+    try {
+      setError("");
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setError("Your session has expired. Please log in again.");
+        return;
+      }
+
+      const response = await fetch(
+        `http://localhost:5000/api/reports/${report.id}/pdf`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        let errorMessage = "Unable to download PDF report.";
+
+        try {
+          const data = await response.json();
+          errorMessage = data.message || errorMessage;
+        } catch {
+          // Response may not be JSON.
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `ScamShield_Report_${report.id}.pdf`;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("PDF Download Error:", err);
+
+      setError(
+        err.message ||
+          "Unable to download PDF report. Please try again."
+      );
+    }
   };
 
   // ==========================================
@@ -731,20 +784,29 @@ function ThreatReports() {
 
                         <td className="px-5 py-4">
 
-                          <button
-                            onClick={() =>
-                              setSelectedReport(
-                                report
-                              )
-                            }
-                            className="flex items-center gap-2 rounded-lg border border-[#25445D] px-3 py-2 text-xs font-semibold text-[#A7BAC9] transition hover:border-[#42B9FF] hover:bg-[#102A43] hover:text-white"
-                          >
+                          <div className="flex items-center gap-2">
 
-                            <Eye size={15} />
+                            <button
+                              onClick={() =>
+                                setSelectedReport(report)
+                              }
+                              className="flex items-center gap-2 rounded-lg border border-[#25445D] px-3 py-2 text-xs font-semibold text-[#A7BAC9] transition hover:border-[#42B9FF] hover:bg-[#102A43] hover:text-white"
+                            >
+                              <Eye size={15} />
+                              View
+                            </button>
 
-                            View
+                            <button
+                              onClick={() =>
+                                downloadPDF(report)
+                              }
+                              className="flex items-center gap-2 rounded-lg border border-[#174D6E] bg-[#0D2B40] px-3 py-2 text-xs font-semibold text-[#42B9FF] transition hover:bg-[#102F47] hover:text-white"
+                            >
+                              <Download size={15} />
+                              PDF
+                            </button>
 
-                          </button>
+                          </div>
 
                         </td>
 
@@ -1089,14 +1151,28 @@ function ThreatReports() {
 
             <div className="border-t border-[#17344D] p-5">
 
-              <button
-                onClick={() =>
-                  setSelectedReport(null)
-                }
-                className="w-full rounded-xl bg-[#FF9F43] py-3 font-bold text-[#17100A] hover:bg-[#FFB66B]"
-              >
-                Close Report
-              </button>
+              <div className="flex flex-col gap-3 sm:flex-row">
+
+                <button
+                  onClick={() =>
+                    downloadPDF(selectedReport)
+                  }
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#174D6E] bg-[#0D2B40] py-3 font-bold text-[#42B9FF] hover:bg-[#102F47]"
+                >
+                  <Download size={18} />
+                  Download PDF Report
+                </button>
+
+                <button
+                  onClick={() =>
+                    setSelectedReport(null)
+                  }
+                  className="flex-1 rounded-xl bg-[#FF9F43] py-3 font-bold text-[#17100A] hover:bg-[#FFB66B]"
+                >
+                  Close Report
+                </button>
+
+              </div>
 
             </div>
 
