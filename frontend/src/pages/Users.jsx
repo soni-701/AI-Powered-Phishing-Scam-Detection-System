@@ -93,7 +93,7 @@ function Users() {
         matchesRole
       );
     });
-  }, [search, statusFilter, roleFilter]);
+  }, [search, statusFilter, roleFilter,usersData]);
 
   const totalUsers = usersData.length;
 

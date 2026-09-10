@@ -10,6 +10,7 @@ function analyzeURL(url) {
       level: "SAFE",
       category: "No Threat",
       confidence: 0,
+      isTrustedDomain: false,
       reasons: ["No URL was provided for analysis."],
     };
   }
@@ -35,9 +36,8 @@ function analyzeURL(url) {
       level: "SAFE",
       category: "Invalid URL",
       confidence: 0,
-      reasons: [
-        "The provided input is not a valid URL.",
-      ],
+      isTrustedDomain: false,
+      reasons: ["The provided input is not a valid URL."],
     };
   }
 
@@ -48,11 +48,40 @@ function analyzeURL(url) {
       level: "SAFE",
       category: "Invalid URL",
       confidence: 0,
-      reasons: [
-        "Only HTTP and HTTPS URLs are supported.",
-      ],
+      isTrustedDomain: false,
+      reasons: ["Only HTTP and HTTPS URLs are supported."],
     };
   }
+
+  const hostname = parsedURL.hostname.toLowerCase();
+
+  // =========================================
+  // TRUSTED DOMAINS
+  // =========================================
+
+  const trustedDomains = [
+    "youtube.com",
+    "google.com",
+    "microsoft.com",
+    "github.com",
+    "wikipedia.org",
+    "amazon.com",
+    "apple.com",
+    "facebook.com",
+    "instagram.com",
+    "linkedin.com",
+    "twitter.com",
+    "x.com",
+    "reddit.com",
+    "netflix.com",
+    "paypal.com",
+  ];
+
+  const isTrustedDomain =
+    trustedDomains.includes(hostname) ||
+    trustedDomains.some(
+      (domain) => hostname.endsWith("." + domain)
+    );
 
   // =========================================
   // HTTPS CHECK
@@ -101,12 +130,10 @@ function analyzeURL(url) {
   // IP ADDRESS DETECTION
   // =========================================
 
-  const ipPattern =
-    /^(?:https?:\/\/)?(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?(?:\/|$)/;
+  const isIPv4 =
+    /^(?:\d{1,3}\.){3}\d{1,3}$/.test(hostname);
 
-  const hostname = parsedURL.hostname;
-
-  if (ipPattern.test(originalUrl) || /^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname)) {
+  if (isIPv4) {
     score += 30;
 
     reasons.push(
@@ -167,7 +194,7 @@ function analyzeURL(url) {
   }
 
   // =========================================
-  // URL ENCODING / SPECIAL CHARACTERS
+  // URL ENCODING
   // =========================================
 
   const percentCount =
@@ -178,6 +205,20 @@ function analyzeURL(url) {
 
     reasons.push(
       "The URL contains multiple encoded characters."
+    );
+  }
+
+  // =========================================
+  // TRUSTED DOMAIN MESSAGE
+  // =========================================
+
+  if (
+    isTrustedDomain &&
+    !isIPv4 &&
+    !text.includes("@")
+  ) {
+    reasons.unshift(
+      `The domain "${hostname}" is recognized as a trusted domain.`
     );
   }
 
@@ -223,6 +264,7 @@ function analyzeURL(url) {
     level,
     category,
     confidence,
+    isTrustedDomain,
     reasons,
   };
 }

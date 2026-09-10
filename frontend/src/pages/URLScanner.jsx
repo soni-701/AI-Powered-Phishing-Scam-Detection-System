@@ -604,29 +604,50 @@ function URLScanner() {
                 </div>
 
 
-                <div className="grid gap-3 sm:grid-cols-2">
+               <div className="grid gap-3 sm:grid-cols-2">
 
-                  <MetricCard
-                    icon={<Target size={17} />}
-                    title="Prediction"
-                    value={
-                      result.prediction === "phishing"
-                        ? "PHISHING"
-                        : "LEGITIMATE"
-                    }
-                    danger={
-                      result.prediction === "phishing"
-                    }
-                  />
+  <MetricCard
+    icon={<Target size={17} />}
+    title="Model Prediction"
+    value={
+      result.prediction === "phishing"
+        ? "PHISHING"
+        : "LEGITIMATE"
+    }
+    danger={
+      result.prediction === "phishing"
+    }
+  />
 
+  <MetricCard
+    icon={<Activity size={17} />}
+    title="Model Confidence"
+    value={`${result.confidence}%`}
+  />
 
-                  <MetricCard
-                    icon={<Activity size={17} />}
-                    title="Confidence"
-                    value={`${result.confidence}%`}
-                  />
+</div>
 
-                </div>
+<div className="mt-4 rounded-xl border border-[#17344D] bg-[#081725] p-4">
+  <div className="flex items-center gap-2">
+    <Shield size={17} className="text-[#42B9FF]" />
+
+    <span className="text-xs font-semibold text-[#607D94]">
+      Final Security Decision
+    </span>
+  </div>
+
+  <p
+    className={`mt-2 text-lg font-bold ${
+      result.dangerous
+        ? "text-[#FF4D5E]"
+        : result.score >= 30
+        ? "text-[#FF9F43]"
+        : "text-[#32D583]"
+    }`}
+  >
+    {result.level}
+  </p>
+</div>
 
               </div>
 

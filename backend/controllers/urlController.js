@@ -12,7 +12,11 @@ const scanURL = async (req, res) => {
   try {
     const { url } = req.body;
 
-    if (!url || !url.trim()) {
+    // ==============================
+    // BASIC VALIDATION
+    // ==============================
+
+    if (!url || typeof url !== "string" || !url.trim()) {
       return res.status(400).json({
         success: false,
         message: "URL is required.",
@@ -34,33 +38,82 @@ const scanURL = async (req, res) => {
     const ruleResult = analyzeURL(cleanedURL);
 
     // ==============================
-    // COMBINE ML + RULE RESULTS
+    // INITIAL VALUES
     // ==============================
 
-    let score = 5;
-    let level = "SAFE";
-    let category = "No Threat";
+    let score = ruleResult.score;
+    let level = ruleResult.level;
+    let category = ruleResult.category;
 
-    if (mlResult.prediction === "phishing") {
-      score = Math.max(
-        Math.round(mlResult.confidence),
-        ruleResult.score
-      );
+    // ==============================
+    // TRUSTED DOMAIN HANDLING
+    // ==============================
+
+    if (ruleResult.isTrustedDomain) {
+      /*
+       * A recognized trusted domain should not become
+       * HIGH RISK only because the ML model produced
+       * a false positive.
+       */
+
+      score = Math.min(ruleResult.score, 20);
+
+      level = "SAFE";
+      category = "No Threat";
     } else {
-      score = Math.min(
-        Math.round(100 - mlResult.confidence),
-        ruleResult.score
-      );
-    }
+      // ==============================
+      // NON-TRUSTED URL
+      // ==============================
 
-    score = Math.min(Math.max(score, 0), 98);
+      if (mlResult.prediction === "phishing") {
+        /*
+         * Do not directly use 100% ML confidence
+         * as the final score.
+         *
+         * Combine ML and rule-based evidence.
+         */
 
-    if (score >= 60) {
-      level = "HIGH RISK";
-      category = "Phishing URL";
-    } else if (score >= 30) {
-      level = "SUSPICIOUS";
-      category = "Suspicious URL";
+        const mlScore = Math.round(mlResult.confidence);
+
+        if (ruleResult.score >= 60) {
+          score = Math.max(
+            ruleResult.score,
+            Math.round((mlScore + ruleResult.score) / 2)
+          );
+        } else {
+          /*
+           * When rules do not strongly support phishing,
+           * limit the ML influence.
+           */
+          score = Math.max(
+            ruleResult.score,
+            Math.min(mlScore, 55)
+          );
+        }
+      } else {
+        /*
+         * ML says legitimate.
+         * Rule-based suspicious indicators still matter.
+         */
+        score = ruleResult.score;
+      }
+
+      score = Math.min(Math.max(score, 0), 98);
+
+      // ==============================
+      // FINAL RISK LEVEL
+      // ==============================
+
+      if (score >= 60) {
+        level = "HIGH RISK";
+        category = "Phishing URL";
+      } else if (score >= 30) {
+        level = "SUSPICIOUS";
+        category = "Suspicious URL";
+      } else {
+        level = "SAFE";
+        category = "No Threat";
+      }
     }
 
     // ==============================
@@ -74,7 +127,17 @@ const scanURL = async (req, res) => {
     ];
 
     // ==============================
-    // SAVE COMPLETE RESULT
+    // TRUSTED DOMAIN REASON
+    // ==============================
+
+    if (ruleResult.isTrustedDomain) {
+      reasons.unshift(
+        "Trusted-domain protection prevented an ML false positive."
+      );
+    }
+
+    // ==============================
+    // SAVE RESULT
     // ==============================
 
     const scan = await Scan.create({
@@ -87,7 +150,6 @@ const scanURL = async (req, res) => {
       category,
       confidence: mlResult.confidence,
 
-      // NEW
       prediction: mlResult.prediction,
       features: mlResult.features || [],
 
@@ -95,10 +157,10 @@ const scanURL = async (req, res) => {
     });
 
     // ==============================
-    // SEND RESULT TO FRONTEND
+    // SEND RESULT
     // ==============================
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
 
       result: {
@@ -121,7 +183,7 @@ const scanURL = async (req, res) => {
   } catch (error) {
     console.error("URL scanning error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message:
         error.message || "Unable to analyze URL.",
