@@ -1,3 +1,4 @@
+import API_URL from "../api";
 import { useEffect, useState } from "react";
 import {
   Bell,
@@ -132,7 +133,7 @@ function Settings({ onLogout, onNavigate }) {
       setChangingPassword(true);
 
       const response = await fetch(
-        "http://localhost:5000/api/auth/change-password",
+        `${API_URL}/api/auth/change-password`,
         {
           method: "PUT",
           headers: {

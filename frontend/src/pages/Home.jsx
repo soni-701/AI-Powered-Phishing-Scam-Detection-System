@@ -44,7 +44,7 @@ function Home({ onNavigate }) {
         const token = localStorage.getItem("token");
 
         const response = await fetch(
-          "http://localhost:5000/api/analytics",
+          `${API_URL}/api/analytics`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

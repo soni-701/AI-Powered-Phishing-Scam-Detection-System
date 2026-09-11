@@ -1,3 +1,4 @@
+import API_URL from "../api";
 import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle,
@@ -29,7 +30,7 @@ function Users({ onNavigate }) {
 
         const token = localStorage.getItem("token");
 
-        const response = await fetch("http://localhost:5000/api/users", {
+        const response = await fetch(`${API_URL}/api/users`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

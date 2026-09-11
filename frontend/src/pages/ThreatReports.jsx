@@ -1,3 +1,4 @@
+import API_URL from "../api";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -33,7 +34,7 @@ function ThreatReports({ onNavigate }) {
 
         const token = localStorage.getItem("token");
 
-        const response = await fetch("http://localhost:5000/api/reports", {
+        const response = await fetch(`${API_URL}/api/reports`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -190,7 +191,7 @@ function ThreatReports({ onNavigate }) {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/reports/${report.id}/pdf`,
+        `${API_URL}/api/reports/${report.id}/pdf`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

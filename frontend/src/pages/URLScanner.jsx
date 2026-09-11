@@ -1,3 +1,4 @@
+import API_URL from "../api";
 import { useState } from "react";
 
 import {
@@ -105,7 +106,7 @@ function URLScanner({ onNavigate }) {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        "http://localhost:5000/api/scan/url",
+        `${API_URL}/api/scan/url`,
         {
           method: "POST",
           headers: {
