@@ -95,15 +95,10 @@ app.get("/api/health", (req, res) => {
 // =========================================
 
 app.use("/api/scan/url", urlRoutes);
-
 app.use("/api/scan/message", messageRoutes);
-
 app.use("/api/reports", reportRoutes);
-
 app.use("/api/analytics", analyticsRoutes);
-
 app.use("/api/auth", authRoutes);
-
 app.use("/api/users", userRoutes);
 
 // =========================================
