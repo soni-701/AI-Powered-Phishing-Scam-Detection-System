@@ -1,31 +1,50 @@
 import { useState } from "react";
 
 import {
+  Activity,
   AlertTriangle,
-  CheckCircle,
+  ArrowRight,
+  CheckCircle2,
+  ChevronRight,
   Globe,
+  Hash,
   Link as LinkIcon,
   Loader2,
+  Lock,
+  Network,
+  Search,
   Shield,
   ShieldAlert,
-  Search,
-  Lock,
-  Brain,
   Target,
-  Activity,
-  Network,
-  Hash,
+  XCircle,
 } from "lucide-react";
 
-function URLScanner() {
+function URLScanner({ onNavigate }) {
   const [url, setUrl] = useState("");
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
 
-  // =========================================
-  // SCAN URL
-  // =========================================
+  const featureNames = [
+    "URL Length",
+    "Hostname Length",
+    "Path Length",
+    "Dot Count",
+    "Hyphen Count",
+    "Slash Count",
+    "Question Mark Count",
+    "Equal Sign Count",
+    "At Symbol Count",
+    "Percent Count",
+    "HTTPS",
+    "HTTP",
+    "IP Address",
+    "Suspicious Word Count",
+    "Subdomain Count",
+    "Digit Count",
+    "Letter Count",
+    "Shortened URL",
+  ];
 
   const handleScan = async () => {
     setError("");
@@ -36,14 +55,8 @@ function URLScanner() {
       return;
     }
 
-    // =========================================
-    // NORMALIZE + VALIDATE URL INPUT
-    // =========================================
-
     let inputUrl = url.trim();
 
-    // If the user enters a domain without a protocol,
-    // automatically use HTTPS.
     if (
       !inputUrl.startsWith("http://") &&
       !inputUrl.startsWith("https://")
@@ -67,9 +80,6 @@ function URLScanner() {
       return;
     }
 
-    // Require a real hostname such as youtube.com or www.youtube.com.
-    // This prevents inputs like "hello" from being accepted as
-    // https://hello.
     const hostname = validUrl.hostname;
 
     const isIPv4 =
@@ -77,12 +87,10 @@ function URLScanner() {
 
     const isValidHostname =
       isIPv4 ||
-      (
-        hostname.includes(".") &&
+      (hostname.includes(".") &&
         !hostname.startsWith(".") &&
         !hostname.endsWith(".") &&
-        !hostname.includes("..")
-      );
+        !hostname.includes(".."));
 
     if (!isValidHostname) {
       setError(
@@ -100,12 +108,10 @@ function URLScanner() {
         "http://localhost:5000/api/scan/url",
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-
           body: JSON.stringify({
             url: inputUrl,
           }),
@@ -131,48 +137,43 @@ function URLScanner() {
         features: data.result.features || [],
         reasons: data.result.reasons || [],
       });
+    } catch (err) {
+      console.error("URL Scanner Error:", err);
 
-   } catch (error) {
-  console.error("URL Scanner Error:", error);
+      const errorMessage = err.message || "";
+      const lower = errorMessage.toLowerCase();
 
-  const errorMessage = error.message || "";
-
-  if (
-    errorMessage.toLowerCase().includes("too many") ||
-    errorMessage.toLowerCase().includes("rate limit")
-  ) {
-    setError(
-      "Too many scan requests. Please wait a few minutes and try again."
-    );
-  } else if (
-    errorMessage.toLowerCase().includes("ml service") ||
-    errorMessage.toLowerCase().includes("url ml")
-  ) {
-    setError(
-      "URL ML service is unavailable. Please start the AI detection service and try again."
-    );
-  } else if (
-    errorMessage.toLowerCase().includes("authentication") ||
-    errorMessage.toLowerCase().includes("token") ||
-    errorMessage.toLowerCase().includes("unauthorized")
-  ) {
-    setError(
-      "Your session has expired. Please log in again."
-    );
-  } else {
-    setError(
-      errorMessage ||
-        "Unable to connect to the backend."
-    );
-  }
-} finally {
+      if (
+        lower.includes("too many") ||
+        lower.includes("rate limit")
+      ) {
+        setError(
+          "Too many scan requests. Please wait a few minutes and try again."
+        );
+      } else if (
+        lower.includes("ml service") ||
+        lower.includes("url ml")
+      ) {
+        setError(
+          "URL ML service is unavailable. Please start the AI detection service and try again."
+        );
+      } else if (
+        lower.includes("authentication") ||
+        lower.includes("token") ||
+        lower.includes("unauthorized")
+      ) {
+        setError(
+          "Your session has expired. Please log in again."
+        );
+      } else {
+        setError(
+          errorMessage || "Unable to connect to the backend."
+        );
+      }
+    } finally {
       setScanning(false);
     }
   };
-
-  // =========================================
-  // CLEAR
-  // =========================================
 
   const handleClear = () => {
     setUrl("");
@@ -180,41 +181,12 @@ function URLScanner() {
     setError("");
   };
 
-  // =========================================
-  // FEATURE NAMES
-  // =========================================
-
-  const featureNames = [
-    "URL Length",
-    "Hostname Length",
-    "Path Length",
-    "Dot Count",
-    "Hyphen Count",
-    "Slash Count",
-    "Question Mark Count",
-    "Equal Sign Count",
-    "At Symbol Count",
-    "Percent Count",
-    "HTTPS",
-    "HTTP",
-    "IP Address",
-    "Suspicious Word Count",
-    "Subdomain Count",
-    "Digit Count",
-    "Letter Count",
-    "Shortened URL",
-  ];
-
-  // =========================================
-  // FORMAT FEATURE VALUE
-  // =========================================
-
   const formatFeatureValue = (name, value) => {
-    if (name === "HTTPS") {
-      return value === 1 ? "Yes" : "No";
-    }
-
-    if (name === "HTTP") {
+    if (
+      name === "HTTPS" ||
+      name === "HTTP" ||
+      name === "Shortened URL"
+    ) {
       return value === 1 ? "Yes" : "No";
     }
 
@@ -222,105 +194,134 @@ function URLScanner() {
       return value === 1 ? "Detected" : "Not Detected";
     }
 
-    if (name === "Shortened URL") {
-      return value === 1 ? "Yes" : "No";
-    }
-
     return value;
   };
 
+  const resultTone =
+    result?.dangerous
+      ? "danger"
+      : result?.score >= 30
+      ? "warning"
+      : "success";
+
+  const toneClasses = {
+    success: {
+      soft: "bg-[#E8F1EC]",
+      text: "text-[#2F7D5A]",
+      border: "border-[#C8DCCF]",
+      icon: "text-[#2F7D5A]",
+    },
+    warning: {
+      soft: "bg-[#F3ECDD]",
+      text: "text-[#8A713B]",
+      border: "border-[#E5D8B9]",
+      icon: "text-[#8A713B]",
+    },
+    danger: {
+      soft: "bg-[#F3E2DF]",
+      text: "text-[#8C5B55]",
+      border: "border-[#E1C8C4]",
+      icon: "text-[#8C5B55]",
+    },
+  };
+
+  const tone = toneClasses[resultTone];
+
   return (
-    <div className="min-h-screen bg-transparent text-white">
+    <div className="min-h-screen bg-[#EDECE7] text-[#2F302F]">
 
-      {/* =========================================
-          PAGE
-      ========================================= */}
+      {/* =====================================================
+          BACK TO DASHBOARD
+      ===================================================== */}
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-5 sm:py-8 lg:px-8">
+      <div className="border-b border-[#D8D5CD] bg-[#F4F2ED]">
+        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+          <button
+            onClick={() => onNavigate?.("home")}
+            className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold text-[#666761] transition hover:bg-white hover:text-[#343532]"
+          >
+            <span className="text-base leading-none">←</span>
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
 
-        {/* =========================================
-            HEADER
-        ========================================= */}
+      {/* =====================================================
+          SCANNER HEADER
+      ===================================================== */}
 
-        <div className="mb-8">
+      <section className="border-b border-[#D6D3CC] bg-[#EDECE7]">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
 
-          <div className="mb-3 flex items-center gap-3">
-
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#174D6E] bg-[#0D2B40]">
-
-              <LinkIcon
-                size={24}
-                className="text-[#42B9FF]"
-              />
-
-            </div>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
 
             <div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#C9C6BE] bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#666761]">
+                <LinkIcon size={13} className="text-[#2F7D5A]" />
+                URL SECURITY CHECK
+              </div>
 
-              <h1 className="text-2xl font-bold sm:text-3xl">
-                URL Scanner
+              <h1 className="text-4xl font-semibold tracking-[-0.04em] text-[#343532] sm:text-5xl">
+                Scan a website
+                <span className="block text-[#434341]">
+                  before you trust it.
+                </span>
               </h1>
 
-              <p className="text-sm text-[#607D94]">
-                Analyze suspicious websites and detect phishing threats
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-[#70716B] sm:text-base">
+                Analyze URL structure, suspicious indicators and
+                machine-learning signals to understand the security
+                risk of a website.
               </p>
+            </div>
 
+            <div className="flex items-center gap-2 rounded-full border border-[#C8DCCF] bg-[#F1F7F3] px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-[#2F7D5A]">
+              <span className="h-2 w-2 rounded-full bg-[#2F7D5A]" />
+              AI Detection Online
             </div>
 
           </div>
-
         </div>
+      </section>
 
+      {/* =====================================================
+          SCANNER
+      ===================================================== */}
 
-        {/* =========================================
-            SCANNER CARD
-        ========================================= */}
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
 
-        <div className="rounded-2xl border border-[#1A344C] bg-[#0B1B2B]/90 p-4 shadow-xl sm:p-6">
+        <section className="rounded-[24px] border border-[#D4D1C9] bg-white p-5 shadow-sm sm:p-7">
 
-          {/* CARD HEADER */}
+          <div className="flex items-start gap-3">
 
-          <div className="mb-6 flex items-center gap-3">
-
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#102A43]">
-
-              <Shield
-                size={20}
-                className="text-[#42B9FF]"
-              />
-
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ECEAE5] text-[#555650]">
+              <Shield size={19} />
             </div>
 
             <div>
-
-              <h2 className="font-bold">
-                Scan a Website URL
+              <h2 className="text-lg font-semibold text-[#373834]">
+                Website security scan
               </h2>
 
-              <p className="text-xs text-[#607D94]">
-                Enter a URL to analyze its security risk
+              <p className="mt-1 text-xs text-[#83847D]">
+                Paste a full URL or simply enter a domain such as
+                youtube.com
               </p>
-
             </div>
 
           </div>
 
-
-          {/* INPUT */}
-
-          <div>
-
-            <label className="mb-2 block text-sm font-semibold text-[#C4D0DB]">
+          <div className="mt-6">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#777872]">
               Website URL
             </label>
 
-            <div className="flex flex-col gap-3 md:flex-row">
+            <div className="flex flex-col gap-3 lg:flex-row">
 
               <div className="relative flex-1">
-
                 <Globe
-                  size={19}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[#607D94]"
+                  size={18}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[#96968F]"
                 />
 
                 <input
@@ -333,563 +334,583 @@ function URLScanner() {
                     }
                   }}
                   placeholder="https://example.com"
-                  className="w-full rounded-xl border border-[#25445D] bg-[#081725] py-4 pl-12 pr-4 text-sm text-white outline-none transition focus:border-[#42B9FF]"
+                  className="w-full rounded-xl border border-[#D5D2CA] bg-white py-4 pl-11 pr-4 text-sm font-medium !text-[#343532] caret-[#2F7D5A] outline-none transition placeholder:text-[#9A9A92] focus:border-[#8E8C85] focus:bg-white selection:bg-[#DCEBE1] selection:text-[#343532]"
+                  style={{
+                    color: "#343532",
+                    WebkitTextFillColor: "#343532",
+                  }}
                 />
-
               </div>
-
 
               <button
                 onClick={handleScan}
                 disabled={scanning}
-                className="flex items-center justify-center gap-2 rounded-xl bg-[#FF9F43] px-7 py-4 font-bold text-[#17100A] transition hover:bg-[#FFB66B] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#434341] px-7 py-4 text-sm font-semibold text-white transition hover:bg-[#333331] disabled:cursor-not-allowed disabled:opacity-60"
               >
-
                 {scanning ? (
                   <>
                     <Loader2
-                      size={19}
+                      size={17}
                       className="animate-spin"
                     />
-
                     Scanning...
                   </>
                 ) : (
                   <>
-                    <Search size={19} />
-
+                    <Search size={17} />
                     Scan URL
                   </>
                 )}
-
               </button>
 
             </div>
 
-
-            {/* ERROR */}
-
             {error && (
-              <div className="mt-4 flex items-center gap-2 rounded-lg border border-[#5A2028] bg-[#2A1218] p-3 text-sm text-[#FF6B78]">
-
-                <AlertTriangle size={18} />
-
-                {error}
-
+              <div className="mt-4 flex items-start gap-3 rounded-xl border border-[#E1C8C4] bg-[#FBF4F2] p-4 text-xs text-[#8C5B55]">
+                <AlertTriangle
+                  size={17}
+                  className="mt-0.5 shrink-0"
+                />
+                <span>{error}</span>
               </div>
             )}
 
           </div>
 
-
-          {/* SECURITY INFO */}
-
           <div className="mt-6 grid gap-3 md:grid-cols-3">
 
-            <InfoItem
-              icon={<Lock size={18} />}
-              title="HTTPS Check"
-              text="Checks secure connection"
+            <ScanCheck
+              icon={<Lock size={17} />}
+              title="HTTPS & Connection"
+              text="Checks whether the URL uses a secure protocol."
             />
 
-            <InfoItem
-              icon={<ShieldAlert size={18} />}
-              title="Threat Analysis"
-              text="Looks for suspicious indicators"
+            <ScanCheck
+              icon={<ShieldAlert size={17} />}
+              title="Threat Indicators"
+              text="Looks for suspicious words and URL patterns."
             />
 
-            <InfoItem
-              icon={<Globe size={18} />}
-              title="Domain Analysis"
-              text="Analyzes URL structure"
+            <ScanCheck
+              icon={<Network size={17} />}
+              title="AI Feature Analysis"
+              text="Extracts lexical features for ML classification."
             />
 
           </div>
 
-        </div>
+        </section>
 
-
-        {/* =========================================
+        {/* ===================================================
             RESULT
-        ========================================= */}
+        =================================================== */}
 
         {result && (
+          <div className="mt-6 space-y-5">
 
-          <div className="mt-6 space-y-6">
+            {/* Result summary */}
 
+            <section className="overflow-hidden rounded-[24px] border border-[#D4D1C9] bg-white shadow-sm">
 
-            {/* =====================================
-                RESULT HEADER
-            ===================================== */}
+              <div className={`border-b ${tone.border} ${tone.soft} px-5 py-5 sm:px-7`}>
 
-            <div className="rounded-2xl border border-[#1A344C] bg-[#0B1B2B]/90 p-6 shadow-xl">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-center gap-3">
 
-                <div className="flex items-center gap-3">
+                    <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-white ${tone.text}`}>
+                      {result.dangerous ? (
+                        <ShieldAlert size={22} />
+                      ) : result.score >= 30 ? (
+                        <AlertTriangle size={22} />
+                      ) : (
+                        <CheckCircle2 size={22} />
+                      )}
+                    </div>
 
-                  <div
-                    className={`flex h-12 w-12 items-center justify-center rounded-xl ${
-                      result.dangerous
-                        ? "bg-[#3A1720]"
-                        : result.score >= 30
-                        ? "bg-[#392514]"
-                        : "bg-[#0B3028]"
-                    }`}
-                  >
-
-                    {result.dangerous ? (
-                      <ShieldAlert
-                        size={25}
-                        className="text-[#FF4D5E]"
-                      />
-                    ) : result.score >= 30 ? (
-                      <AlertTriangle
-                        size={25}
-                        className="text-[#FF9F43]"
-                      />
-                    ) : (
-                      <CheckCircle
-                        size={25}
-                        className="text-[#32D583]"
-                      />
-                    )}
-
-                  </div>
-
-
-                  <div>
-
-                    <p className="text-xs uppercase tracking-widest text-[#607D94]">
-                      Scan Result
-                    </p>
-
-                    <h2 className="text-xl font-bold">
-
-                      {result.dangerous
-                        ? "Potential Phishing Threat"
-                        : result.score >= 30
-                        ? "Suspicious URL"
-                        : "URL Appears Safe"}
-
-                    </h2>
-
-                  </div>
-
-                </div>
-
-
-                <button
-                  onClick={handleClear}
-                  className="w-full rounded-lg border border-[#25445D] px-4 py-2 text-sm text-[#8BA0B2] transition hover:bg-[#102A43] hover:text-white md:w-auto"
-                >
-                  New Scan
-                </button>
-
-              </div>
-
-
-              {/* SCANNED URL */}
-
-              <div className="mt-6 rounded-xl border border-[#17344D] bg-[#081725] p-4">
-
-                <p className="mb-2 text-xs uppercase tracking-wider text-[#526B82]">
-                  Scanned URL
-                </p>
-
-                <p className="break-all text-sm text-[#C4D0DB]">
-                  {result.url}
-                </p>
-
-              </div>
-
-            </div>
-
-
-            {/* =====================================
-                SCORE + ML SUMMARY
-            ===================================== */}
-
-            <div className="grid gap-6 lg:grid-cols-2">
-
-
-              {/* RISK SCORE */}
-
-              <div className="rounded-xl border border-[#17344D] bg-[#081725] p-6">
-
-                <p className="mb-5 text-sm font-semibold text-[#8BA0B2]">
-                  Risk Score
-                </p>
-
-
-                <div className="flex flex-col items-center gap-5 sm:flex-row">
-
-                  <div
-                    className={`flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-[10px] sm:h-36 sm:w-36 sm:border-[12px] ${
-                      result.dangerous
-                        ? "border-[#FF4D5E]/30"
-                        : result.score >= 30
-                        ? "border-[#FF9F43]/30"
-                        : "border-[#32D583]/30"
-                    }`}
-                  >
-
-                    <div className="text-center">
-
-                      <p className="text-3xl font-extrabold sm:text-4xl">
-                        {result.score}
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#777872]">
+                        Final Security Decision
                       </p>
 
-                      <p className="text-[10px] uppercase tracking-widest text-[#607D94]">
-                        / 100
-                      </p>
+                      <h2 className={`mt-1 text-xl font-semibold ${tone.text}`}>
+                        {result.level === "HIGH RISK"
+                          ? "Potential phishing threat"
+                          : result.level === "SUSPICIOUS"
+                          ? "Suspicious URL"
+                          : "URL appears safe"}
+                      </h2>
 
+                      <p className="mt-1 text-xs text-[#777872]">
+                        {result.category}
+                      </p>
                     </div>
 
                   </div>
 
+                  <button
+                    onClick={handleClear}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#CFCBC3] bg-white px-4 py-2.5 text-xs font-semibold text-[#656660] transition hover:bg-[#F5F3EE]"
+                  >
+                    <XCircle size={15} />
+                    New Scan
+                  </button>
+
+                </div>
+
+              </div>
+
+              <div className="p-5 sm:p-7">
+
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#8A8B84]">
+                  Scanned URL
+                </p>
+
+                <div className="rounded-xl border border-[#DDD9D1] bg-[#F8F7F3] px-4 py-3">
+                  <p className="break-all text-sm font-medium text-[#454641]">
+                    {result.url}
+                  </p>
+                </div>
+
+              </div>
+
+            </section>
+
+            {/* Risk + model */}
+
+            <div className="grid gap-5 lg:grid-cols-2">
+
+              <section className="rounded-[24px] border border-[#D4D1C9] bg-white p-5 shadow-sm sm:p-7">
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#85867F]">
+                      Overall Risk
+                    </p>
+                    <h3 className="mt-1 text-lg font-semibold text-[#3B3C38]">
+                      Security score
+                    </h3>
+                  </div>
+
+                  <div className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase ${tone.soft} ${tone.text}`}>
+                    {result.level}
+                  </div>
+                </div>
+
+                <div className="mt-8 flex flex-col items-center gap-6 sm:flex-row">
+
+                  <div className={`relative flex h-40 w-40 shrink-0 items-center justify-center rounded-full border-[12px] ${tone.border}`}>
+
+                    <div
+                      className={`absolute inset-[-12px] rounded-full border-[12px] border-transparent ${
+                        result.dangerous
+                          ? "border-t-[#8C5B55] border-r-[#B88A82]"
+                          : result.score >= 30
+                          ? "border-t-[#A28D59] border-r-[#C6B488]"
+                          : "border-t-[#5C9878] border-r-[#9CC2AA]"
+                      } rotate-[35deg]`}
+                    />
+
+                    <div className="text-center">
+                      <p className="text-4xl font-semibold text-[#363733]">
+                        {result.score}
+                      </p>
+                      <p className="mt-1 text-[9px] uppercase tracking-[0.2em] text-[#90918A]">
+                        / 100
+                      </p>
+                    </div>
+
+                  </div>
 
                   <div>
-
-                    <p
-                      className={`text-xl font-bold ${
-                        result.dangerous
-                          ? "text-[#FF4D5E]"
-                          : result.score >= 30
-                          ? "text-[#FF9F43]"
-                          : "text-[#32D583]"
-                      }`}
-                    >
+                    <p className={`text-xl font-semibold ${tone.text}`}>
                       {result.level}
                     </p>
 
-                    <p className="mt-2 text-xs text-[#607D94]">
-                      Category: {result.category}
+                    <p className="mt-2 text-sm text-[#777872]">
+                      {result.category}
                     </p>
 
+                    <p className="mt-4 text-xs leading-5 text-[#90918A]">
+                      The final score combines the security rules
+                      and AI output rather than relying on a model
+                      prediction alone.
+                    </p>
                   </div>
 
                 </div>
 
-              </div>
+              </section>
 
+              <section className="rounded-[24px] border border-[#D4D1C9] bg-[#434341] p-5 text-white shadow-sm sm:p-7">
 
-              {/* ML SUMMARY */}
-
-              <div className="rounded-xl border border-[#17344D] bg-[#081725] p-6">
-
-                <div className="mb-5 flex items-center gap-3">
-
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#102A43]">
-
-                    <Brain
-                      size={21}
-                      className="text-[#42B9FF]"
-                    />
-
-                  </div>
+                <div className="flex items-start justify-between gap-4">
 
                   <div>
-
-                    <p className="text-sm font-semibold">
-                      AI / ML Analysis
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#C9C6BE]">
+                      Machine Learning
                     </p>
 
-                    <p className="text-xs text-[#607D94]">
-                      Random Forest URL classification
-                    </p>
+                    <h3 className="mt-1 text-lg font-semibold">
+                      URL model analysis
+                    </h3>
 
+                    <p className="mt-1 text-xs text-[#C1BEB6]">
+                      Random Forest classification
+                    </p>
+                  </div>
+
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#555551]">
+                    <Activity
+                      size={18}
+                      className="text-[#DAD9D4]"
+                    />
                   </div>
 
                 </div>
 
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
 
-               <div className="grid gap-3 sm:grid-cols-2">
+                  <DarkMetric
+                    icon={<Target size={16} />}
+                    label="Model Prediction"
+                    value={
+                      result.prediction === "phishing"
+                        ? "PHISHING"
+                        : "LEGITIMATE"
+                    }
+                    danger={
+                      result.prediction === "phishing"
+                    }
+                  />
 
-  <MetricCard
-    icon={<Target size={17} />}
-    title="Model Prediction"
-    value={
-      result.prediction === "phishing"
-        ? "PHISHING"
-        : "LEGITIMATE"
-    }
-    danger={
-      result.prediction === "phishing"
-    }
-  />
+                  <DarkMetric
+                    icon={<Activity size={16} />}
+                    label="Model Confidence"
+                    value={`${result.confidence}%`}
+                  />
 
-  <MetricCard
-    icon={<Activity size={17} />}
-    title="Model Confidence"
-    value={`${result.confidence}%`}
-  />
+                </div>
 
-</div>
+                <div className="mt-3 rounded-xl border border-[#686862] bg-[#4D4D49] p-4">
 
-<div className="mt-4 rounded-xl border border-[#17344D] bg-[#081725] p-4">
-  <div className="flex items-center gap-2">
-    <Shield size={17} className="text-[#42B9FF]" />
+                  <div className="flex items-center gap-2 text-[#D6D3CB]">
+                    <Shield size={15} />
+                    <span className="text-[10px] font-semibold uppercase tracking-wide">
+                      Final security decision
+                    </span>
+                  </div>
 
-    <span className="text-xs font-semibold text-[#607D94]">
-      Final Security Decision
-    </span>
-  </div>
+                  <p className={`mt-2 text-lg font-semibold ${
+                    result.dangerous
+                      ? "text-[#D4A6A0]"
+                      : result.score >= 30
+                      ? "text-[#D2BD86]"
+                      : "text-[#A9CCB7]"
+                  }`}>
+                    {result.level}
+                  </p>
 
-  <p
-    className={`mt-2 text-lg font-bold ${
-      result.dangerous
-        ? "text-[#FF4D5E]"
-        : result.score >= 30
-        ? "text-[#FF9F43]"
-        : "text-[#32D583]"
-    }`}
-  >
-    {result.level}
-  </p>
-</div>
+                </div>
 
-              </div>
+              </section>
 
             </div>
 
-
-            {/* =====================================
-                URL ML FEATURES
-            ===================================== */}
+            {/* Features */}
 
             {result.features.length > 0 && (
+              <section className="rounded-[24px] border border-[#D4D1C9] bg-white shadow-sm">
 
-              <div className="rounded-2xl border border-[#1A344C] bg-[#0B1B2B]/90 p-6 shadow-xl">
+                <div className="border-b border-[#E0DDD5] px-5 py-5 sm:px-7">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ECEAE5] text-[#555650]">
+                      <Network size={17} />
+                    </div>
 
-                <div className="mb-6 flex items-center gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-[#393A36]">
+                        URL Feature Analysis
+                      </h3>
 
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#102A43]">
-
-                    <Network
-                      size={21}
-                      className="text-[#42B9FF]"
-                    />
-
+                      <p className="mt-1 text-[10px] text-[#898A84]">
+                        Features extracted by the ML pipeline
+                      </p>
+                    </div>
                   </div>
-
-                  <div>
-
-                    <h2 className="font-bold">
-                      URL Feature Analysis
-                    </h2>
-
-                    <p className="text-xs text-[#607D94]">
-                      Features extracted from the URL by the ML pipeline
-                    </p>
-
-                  </div>
-
                 </div>
 
-
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3 sm:p-7">
 
                   {result.features.map((value, index) => (
-
                     <div
                       key={index}
-                      className="rounded-xl border border-[#17344D] bg-[#081725] p-4"
+                      className="rounded-xl border border-[#E0DDD5] bg-[#F8F7F3] p-4"
                     >
-
                       <div className="flex items-start justify-between gap-3">
 
                         <div>
-
-                          <p className="text-xs text-[#607D94]">
+                          <p className="text-[10px] uppercase tracking-wide text-[#8A8B84]">
                             {featureNames[index] ||
                               `Feature ${index + 1}`}
                           </p>
 
-                          <p className="mt-2 text-sm font-bold text-[#C4D0DB]">
-
+                          <p className="mt-2 text-sm font-semibold text-[#40413D]">
                             {formatFeatureValue(
                               featureNames[index],
                               value
                             )}
-
                           </p>
-
                         </div>
 
                         <Hash
-                          size={16}
-                          className="text-[#42B9FF]"
+                          size={15}
+                          className="text-[#9A9A92]"
                         />
 
                       </div>
-
                     </div>
-
                   ))}
 
                 </div>
 
-              </div>
-
+              </section>
             )}
 
+            {/* Findings */}
 
-            {/* =====================================
-                DETECTION FINDINGS
-            ===================================== */}
+            <section className="rounded-[24px] border border-[#D4D1C9] bg-white shadow-sm">
 
-            <div className="rounded-2xl border border-[#1A344C] bg-[#0B1B2B]/90 p-6 shadow-xl">
-
-              <div className="mb-5">
-
-                <p className="text-sm font-semibold text-[#8BA0B2]">
+              <div className="border-b border-[#E0DDD5] px-5 py-5 sm:px-7">
+                <p className="text-sm font-semibold text-[#3B3C38]">
                   Detection Findings
                 </p>
 
-                <p className="mt-1 text-xs text-[#607D94]">
-                  Combined ML prediction and rule-based indicators
+                <p className="mt-1 text-[10px] text-[#898A84]">
+                  Signals used to support the final security decision
+                </p>
+              </div>
+
+              <div className="space-y-2.5 p-5 sm:p-7">
+
+                {result.reasons.map((reason, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 rounded-xl border border-[#E0DDD5] bg-[#FAF9F6] p-3.5"
+                  >
+                    <span
+                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                        result.dangerous
+                          ? "bg-[#8C5B55]"
+                          : result.score >= 30
+                          ? "bg-[#A28D59]"
+                          : "bg-[#2F7D5A]"
+                      }`}
+                    />
+
+                    <p className="text-xs leading-5 text-[#666761]">
+                      {reason}
+                    </p>
+                  </div>
+                ))}
+
+              </div>
+
+            </section>
+
+            {/* How it works */}
+
+            <section>
+
+              <div className="mb-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-[#85867F]">
+                  How it works
                 </p>
 
+                <h3 className="mt-1 text-xl font-semibold text-[#393A36]">
+                  Three-step URL protection
+                </h3>
               </div>
-
-
-              <div className="space-y-3">
-
-                {result.reasons.map(
-                  (reason, index) => (
-
-                    <div
-                      key={index}
-                      className="flex gap-3 rounded-lg border border-[#17344D] bg-[#081725] p-3"
-                    >
-
-                      <span
-                        className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
-                          result.dangerous
-                            ? "bg-[#FF4D5E]"
-                            : result.score >= 30
-                            ? "bg-[#FF9F43]"
-                            : "bg-[#32D583]"
-                        }`}
-                      />
-
-                      <p className="text-xs leading-5 text-[#B5C7D6]">
-                        {reason}
-                      </p>
-
-                    </div>
-
-                  )
-                )}
-
-              </div>
-
-            </div>
-
-
-            {/* =====================================
-                HOW IT WORKS
-            ===================================== */}
-
-            <div>
-
-              <h2 className="mb-4 text-xl font-bold">
-                How URL Detection Works
-              </h2>
 
               <div className="grid gap-4 md:grid-cols-3">
 
                 <StepCard
                   number="01"
                   title="Enter URL"
-                  text="Paste the suspicious website URL into the scanner."
+                  text="Paste a full URL or domain into the scanner."
                 />
 
                 <StepCard
                   number="02"
-                  title="AI + Rule Analysis"
-                  text="The system extracts URL features, runs the ML model and checks suspicious patterns."
+                  title="Analyze signals"
+                  text="Rules and the machine-learning model inspect the URL."
                 />
 
                 <StepCard
                   number="03"
-                  title="Get Risk Report"
-                  text="Receive prediction, confidence, risk score and detailed detection findings."
+                  title="Review decision"
+                  text="Get the score, model output and reasons behind the result."
                 />
 
               </div>
 
+            </section>
+
+          </div>
+        )}
+
+      </main>
+
+      {/* =====================================================
+          FOOTER
+      ===================================================== */}
+
+      <footer className="border-t border-[#D6D3CB] bg-[#434341] text-white">
+
+        <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6 lg:px-8">
+
+          <div className="grid gap-8 md:grid-cols-[1.5fr_1fr_1fr]">
+
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#555551]">
+                  <Shield size={17} />
+                </div>
+
+                <p className="font-semibold">
+                  ScamGuard AI
+                </p>
+              </div>
+
+              <p className="mt-3 max-w-md text-xs leading-5 text-[#D0CDC5]">
+                AI-powered phishing protection with explainable
+                security analysis for suspicious websites.
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold">
+                Scanner
+              </p>
+
+              <div className="mt-4 space-y-2">
+                <button
+                  onClick={() => onNavigate?.("url-scanner")}
+                  className="block text-xs text-[#CAC7BF] hover:text-white"
+                >
+                  URL Scanner
+                </button>
+
+                <button
+                  onClick={() => onNavigate?.("message-scanner")}
+                  className="block text-xs text-[#CAC7BF] hover:text-white"
+                >
+                  Message Scanner
+                </button>
+
+                <button
+                  onClick={() => onNavigate?.("threat-reports")}
+                  className="block text-xs text-[#CAC7BF] hover:text-white"
+                >
+                  Threat Reports
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold">
+                Platform
+              </p>
+
+              <div className="mt-4 space-y-2">
+                <button
+                  onClick={() => onNavigate?.("analytics")}
+                  className="block text-xs text-[#CAC7BF] hover:text-white"
+                >
+                  Analytics
+                </button>
+
+                <button
+                  onClick={() => onNavigate?.("settings")}
+                  className="block text-xs text-[#CAC7BF] hover:text-white"
+                >
+                  Settings
+                </button>
+
+                <button
+                  onClick={() => onNavigate?.("home")}
+                  className="block text-xs text-[#CAC7BF] hover:text-white"
+                >
+                  Dashboard
+                </button>
+              </div>
             </div>
 
           </div>
 
-        )}
+          <div className="mt-8 flex flex-col gap-2 border-t border-[#666660] pt-5 text-[10px] text-[#C1BEB6] sm:flex-row sm:items-center sm:justify-between">
+            <p>© 2026 ScamGuard AI. All rights reserved.</p>
+            <p>AI-powered phishing & scam detection system</p>
+          </div>
 
-      </div>
+        </div>
+
+      </footer>
 
     </div>
   );
 }
 
+/* =========================================================
+   SCAN CHECK
+========================================================= */
 
-// =========================================
-// INFO ITEM
-// =========================================
-
-function InfoItem({ icon, title, text }) {
+function ScanCheck({ icon, title, text }) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-[#17344D] bg-[#081725]/90 p-4">
+    <div className="rounded-xl border border-[#E0DDD5] bg-[#F8F7F3] p-4">
+      <div className="flex items-center gap-2.5">
+        <div className="text-[#555650]">
+          {icon}
+        </div>
 
-      <div className="text-[#42B9FF]">
-        {icon}
-      </div>
-
-      <div>
-
-        <p className="text-xs font-bold">
+        <p className="text-xs font-semibold text-[#434440]">
           {title}
         </p>
-
-        <p className="mt-1 text-[10px] text-[#607D94]">
-          {text}
-        </p>
-
       </div>
 
+      <p className="mt-2 text-[10px] leading-5 text-[#898A84]">
+        {text}
+      </p>
     </div>
   );
 }
 
+/* =========================================================
+   DARK METRIC
+========================================================= */
 
-// =========================================
-// METRIC CARD
-// =========================================
-
-function MetricCard({
+function DarkMetric({
   icon,
-  title,
+  label,
   value,
   danger = false,
 }) {
   return (
-    <div className="rounded-xl border border-[#17344D] bg-[#0B1B2B] p-4">
+    <div className="rounded-xl border border-[#65655F] bg-[#4D4D49] p-4">
 
-      <div className="flex items-center gap-2 text-[#42B9FF]">
-
+      <div className="flex items-center gap-2 text-[#C9C6BE]">
         {icon}
 
-        <span className="text-xs text-[#607D94]">
-          {title}
+        <span className="text-[9px] uppercase tracking-wide">
+          {label}
         </span>
-
       </div>
 
       <p
-        className={`mt-3 text-lg font-bold ${
+        className={`mt-3 text-lg font-semibold ${
           danger
-            ? "text-[#FF4D5E]"
-            : "text-[#32D583]"
+            ? "text-[#D4A6A0]"
+            : "text-[#E5E2DB]"
         }`}
       >
         {value}
@@ -899,28 +920,30 @@ function MetricCard({
   );
 }
 
+/* =========================================================
+   STEP CARD
+========================================================= */
 
-// =========================================
-// STEP CARD
-// =========================================
-
-function StepCard({
-  number,
-  title,
-  text,
-}) {
+function StepCard({ number, title, text }) {
   return (
-    <div className="rounded-xl border border-[#1A344C] bg-[#0B1B2B]/90 p-5">
+    <div className="rounded-2xl border border-[#D8D5CD] bg-white p-5">
 
-      <span className="text-xs font-bold text-[#42B9FF]">
-        {number}
-      </span>
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-semibold tracking-[0.18em] text-[#2F7D5A]">
+          {number}
+        </span>
 
-      <h3 className="mt-3 font-bold">
+        <ArrowRight
+          size={15}
+          className="text-[#AAA9A2]"
+        />
+      </div>
+
+      <h4 className="mt-5 text-sm font-semibold text-[#3D3E3A]">
         {title}
-      </h3>
+      </h4>
 
-      <p className="mt-2 text-xs leading-5 text-[#607D94]">
+      <p className="mt-2 text-xs leading-5 text-[#85867F]">
         {text}
       </p>
 

@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
+  BarChart3,
+  Brain,
   Calendar,
   CheckCircle,
   ChevronDown,
@@ -10,13 +11,12 @@ import {
   FileWarning,
   Filter,
   Search,
+  Shield,
   ShieldAlert,
-  XCircle,
-  Brain,
-  BarChart3,
+  X,
 } from "lucide-react";
 
-function ThreatReports() {
+function ThreatReports({ onNavigate }) {
   const [reports, setReports] = useState([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
@@ -24,13 +24,6 @@ function ThreatReports() {
   const [selectedReport, setSelectedReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showSwipeHint, setShowSwipeHint] = useState(true);
-
-  const tableScrollRef = useRef(null);
-
-  // ==========================================
-  // GET REPORTS FROM BACKEND
-  // ==========================================
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -40,96 +33,56 @@ function ThreatReports() {
 
         const token = localStorage.getItem("token");
 
-        const response = await fetch(
-          "http://localhost:5000/api/reports",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await fetch("http://localhost:5000/api/reports", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(
-            data.message || "Unable to fetch reports."
-          );
+          throw new Error(data.message || "Unable to fetch reports.");
         }
 
-        const formattedReports = data.reports.map(
-          (report, index) => {
-            let status = "Safe";
+        const formattedReports = data.reports.map((report, index) => {
+          let status = "Safe";
 
-            if (report.score >= 60) {
-              status = "Detected";
-            } else if (report.score >= 30) {
-              status = "Suspicious";
-            }
-
-            return {
-              id:
-                report._id ||
-                `TR-${String(index + 1).padStart(4, "0")}`,
-
-              type:
-                report.type === "MESSAGE"
-                  ? "Message"
-                  : "URL",
-
-              target:
-                report.target || "Unknown",
-
-              category:
-                report.category || "Unknown",
-
-              risk:
-                report.score || 0,
-
-              status,
-
-              date: report.createdAt
-                ? new Date(
-                    report.createdAt
-                  ).toLocaleString("en-IN", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : "Unknown",
-
-              confidence:
-                report.confidence || 0,
-
-              // AI / ML prediction
-              prediction:
-                report.prediction || null,
-
-              // 18 URL ML features
-              features:
-                Array.isArray(report.features)
-                  ? report.features
-                  : [],
-
-              reasons:
-                report.reasons || [],
-            };
+          if (report.score >= 60) {
+            status = "Detected";
+          } else if (report.score >= 30) {
+            status = "Suspicious";
           }
-        );
+
+          return {
+            id:
+              report._id ||
+              `TR-${String(index + 1).padStart(4, "0")}`,
+            type: report.type === "MESSAGE" ? "Message" : "URL",
+            target: report.target || "Unknown",
+            category: report.category || "Unknown",
+            risk: report.score || 0,
+            status,
+            date: report.createdAt
+              ? new Date(report.createdAt).toLocaleString("en-IN", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "Unknown",
+            confidence: report.confidence || 0,
+            prediction: report.prediction || null,
+            features: Array.isArray(report.features) ? report.features : [],
+            reasons: report.reasons || [],
+          };
+        });
 
         setReports(formattedReports);
       } catch (err) {
-        console.error(
-          "Reports Error:",
-          err
-        );
-
-        setError(
-          err.message ||
-            "Unable to connect to the backend."
-        );
+        console.error("Reports Error:", err);
+        setError(err.message || "Unable to connect to the backend.");
       } finally {
         setLoading(false);
       }
@@ -138,114 +91,32 @@ function ThreatReports() {
     fetchReports();
   }, []);
 
-  // ==========================================
-  // SEARCH + FILTER
-  // ==========================================
-
   const filteredReports = useMemo(() => {
     return reports.filter((report) => {
       const matchesFilter =
-        filter === "All" ||
-        report.status === filter;
+        filter === "All" || report.status === filter;
 
       const matchesType =
-        typeFilter === "All" ||
-        report.type === typeFilter;
+        typeFilter === "All" || report.type === typeFilter;
 
-      const query =
-        search.toLowerCase().trim();
+      const query = search.toLowerCase().trim();
 
       const matchesSearch =
-        report.target
-          .toLowerCase()
-          .includes(query) ||
-        report.category
-          .toLowerCase()
-          .includes(query) ||
-        report.type
-          .toLowerCase()
-          .includes(query) ||
-        report.id
-          .toLowerCase()
-          .includes(query);
+        report.target.toLowerCase().includes(query) ||
+        report.category.toLowerCase().includes(query) ||
+        report.type.toLowerCase().includes(query) ||
+        report.id.toLowerCase().includes(query);
 
-      return (
-        matchesFilter &&
-        matchesType &&
-        matchesSearch
-      );
+      return matchesFilter && matchesType && matchesSearch;
     });
-  }, [
-    reports,
-    search,
-    filter,
-    typeFilter,
-  ]);
+  }, [reports, search, filter, typeFilter]);
 
-  // ==========================================
-  // MOBILE TABLE SWIPE HINT
-  // ==========================================
-
-  useEffect(() => {
-    const container =
-      tableScrollRef.current;
-
-    if (!container) return;
-
-    const handleScroll = () => {
-      if (container.scrollLeft > 10) {
-        setShowSwipeHint(false);
-      }
-    };
-
-    container.addEventListener(
-      "scroll",
-      handleScroll,
-      { passive: true }
-    );
-
-    return () => {
-      container.removeEventListener(
-        "scroll",
-        handleScroll
-      );
-    };
-  }, [
-    loading,
-    error,
-    filteredReports.length,
-  ]);
-
-  // ==========================================
-  // SUMMARY COUNTS
-  // ==========================================
-
-  const detected =
-    reports.filter(
-      (report) =>
-        report.status === "Detected"
-    ).length;
-
-  const suspicious =
-    reports.filter(
-      (report) =>
-        report.status === "Suspicious"
-    ).length;
-
-  const safe =
-    reports.filter(
-      (report) =>
-        report.status === "Safe"
-    ).length;
-
-  // ==========================================
-  // EXPORT CSV
-  // ==========================================
+  const detected = reports.filter((report) => report.status === "Detected").length;
+  const suspicious = reports.filter((report) => report.status === "Suspicious").length;
+  const safe = reports.filter((report) => report.status === "Safe").length;
 
   const exportCSV = () => {
-    if (filteredReports.length === 0) {
-      return;
-    }
+    if (filteredReports.length === 0) return;
 
     const generatedAt = new Date().toLocaleString("en-IN");
 
@@ -263,44 +134,34 @@ function ThreatReports() {
       "Generated At",
     ];
 
-    const rows = filteredReports.map(
-      (report) => [
-        report.id,
-        report.type,
-        report.target,
-        report.category,
-        report.risk,
-        report.status,
-        `${report.confidence}%`,
-        report.prediction || "N/A",
-        report.date,
-        report.reasons.join(" | "),
-        generatedAt,
-      ]
-    );
+    const rows = filteredReports.map((report) => [
+      report.id,
+      report.type,
+      report.target,
+      report.category,
+      report.risk,
+      report.status,
+      `${report.confidence}%`,
+      report.prediction || "N/A",
+      report.date,
+      report.reasons.join(" | "),
+      generatedAt,
+    ]);
 
-    const csvContent = [
-      headers,
-      ...rows,
-    ]
+    const csvContent = [headers, ...rows]
       .map((row) =>
         row
           .map((value) => {
             const safeValue = String(value ?? "");
-
             return `"${safeValue.replace(/"/g, '""')}"`;
           })
           .join(",")
       )
       .join("\r\n");
 
-    // UTF-8 BOM helps Excel correctly recognize the CSV encoding.
-    const blob = new Blob(
-      ["\uFEFF", csvContent],
-      {
-        type: "text/csv;charset=utf-8;",
-      }
-    );
+    const blob = new Blob(["\uFEFF", csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
 
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -316,10 +177,6 @@ function ThreatReports() {
 
     URL.revokeObjectURL(url);
   };
-
-  // ==========================================
-  // DOWNLOAD PDF
-  // ==========================================
 
   const downloadPDF = async (report) => {
     try {
@@ -376,10 +233,6 @@ function ThreatReports() {
     }
   };
 
-  // ==========================================
-  // URL FEATURE NAMES
-  // ==========================================
-
   const featureNames = [
     "URL Length",
     "Hostname Length",
@@ -401,846 +254,629 @@ function ThreatReports() {
     "Shortened URL",
   ];
 
-  // ==========================================
-  // FORMAT FEATURE VALUE
-  // ==========================================
-
-  const formatFeatureValue = (
-    name,
-    value
-  ) => {
+  const formatFeatureValue = (name, value) => {
     if (
       name === "HTTPS" ||
       name === "HTTP" ||
       name === "IP Address" ||
       name === "Shortened URL"
     ) {
-      return value === 1
-        ? "Yes"
-        : "No";
+      return value === 1 ? "Yes" : "No";
     }
 
     return value;
   };
 
-  // ==========================================
-  // UI
-  // ==========================================
+  const navItems = [
+    ["home", "Home"],
+    ["url-scanner", "Scan URL"],
+    ["message-scanner", "Scan Message"],
+    ["analytics", "Analytics"],
+    ["threat-reports", "Threat Reports"],
+    ["users", "Users"],
+    ["settings", "Settings"],
+  ];
 
   return (
-    <div className="min-h-screen bg-transparent text-white">
-
-      <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8">
-
-        {/* HEADER */}
-
-        <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
-
-          <div className="flex items-center gap-3">
-
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#174D6E] bg-[#0D2B40]">
-
-              <FileWarning
-                size={24}
-                className="text-[#42B9FF]"
-              />
-
+    <div className="min-h-screen bg-[#EDECE7] text-[#2F302F]">
+      {/* TOP NAVIGATION */}
+      <header className="sticky top-0 z-40 border-b border-[#DAD9D4] bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
+          <button
+            onClick={() => onNavigate?.("home")}
+            className="flex shrink-0 items-center gap-2"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#434341] text-white">
+              <Shield size={18} />
             </div>
+            <span className="hidden text-sm font-extrabold tracking-tight sm:inline">
+              ScamGuard AI
+            </span>
+          </button>
 
-            <div>
+          <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
+            {navItems.map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => onNavigate?.(id)}
+                className={`shrink-0 rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                  id === "threat-reports"
+                    ? "bg-[#434341] text-white"
+                    : "text-[#686861] hover:bg-[#F0EFEB] hover:text-[#2F302F]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
 
-              <h1 className="text-3xl font-bold">
-                Threat Reports
-              </h1>
-
-              <p className="mt-1 text-sm text-[#607D94]">
-                Review your complete scan history and investigate phishing and scam threats
-              </p>
-
-            </div>
-
+          <div className="hidden items-center gap-2 lg:flex">
+            <span className="h-2 w-2 rounded-full bg-[#2F7D5A]" />
+            <span className="text-xs font-semibold text-[#6B6B66]">
+              System online
+            </span>
           </div>
+        </div>
+      </header>
 
-          {/* EXPORT BUTTON */}
+      <main className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
+        {/* HEADER */}
+        <section className="mb-7 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+          <div>
+            <button
+              onClick={() => onNavigate?.("home")}
+              className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-[#6B6B66] transition hover:text-[#2F302F]"
+            >
+              ← Back to Dashboard
+            </button>
+
+            <div className="flex items-start gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#D4D1C9] bg-white">
+                <FileWarning size={22} className="text-[#434341]" />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#7A7972]">
+                  Security history
+                </p>
+                <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl">
+                  Threat Reports
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6B6B66]">
+                  Review scan history and investigate phishing and scam
+                  detection results.
+                </p>
+              </div>
+            </div>
+          </div>
 
           <button
             onClick={exportCSV}
-            disabled={
-              loading ||
-              filteredReports.length === 0
-            }
-            className="flex items-center justify-center gap-2 rounded-xl bg-[#42B9FF] px-5 py-3 text-sm font-bold text-[#06121C] transition hover:bg-[#70CBFF] disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={loading || filteredReports.length === 0}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#434341] px-5 py-3 text-sm font-extrabold text-white transition hover:bg-[#343532] disabled:cursor-not-allowed disabled:opacity-40"
           >
-
             <Download size={18} />
-
             Export CSV
-
           </button>
-
-        </div>
+        </section>
 
         {/* SUMMARY */}
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <SummaryCard
             title="Total Reports"
             value={reports.length}
-            icon={
-              <FileWarning size={20} />
-            }
-            type="blue"
+            icon={<FileWarning size={20} />}
+            tone="charcoal"
           />
-
           <SummaryCard
             title="Threats Detected"
             value={detected}
-            icon={
-              <ShieldAlert size={20} />
-            }
-            type="red"
+            icon={<ShieldAlert size={20} />}
+            tone="red"
           />
-
           <SummaryCard
             title="Suspicious"
             value={suspicious}
-            icon={
-              <AlertTriangle size={20} />
-            }
-            type="orange"
+            icon={<AlertTriangle size={20} />}
+            tone="warm"
           />
-
           <SummaryCard
             title="Safe"
             value={safe}
-            icon={
-              <CheckCircle size={20} />
-            }
-            type="green"
+            icon={<CheckCircle size={20} />}
+            tone="green"
           />
+        </section>
 
-        </div>
+        {/* REPORT PANEL */}
+        <section className="mt-6 overflow-hidden rounded-3xl border border-[#D4D1C9] bg-white shadow-[0_12px_35px_rgba(47,48,47,0.05)]">
+          <div className="border-b border-[#E1DFDA] p-4 sm:p-5">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div>
+                <h2 className="text-lg font-extrabold">Scan History</h2>
+                <p className="mt-1 text-xs text-[#77766F]">
+                  Search reports and filter them by risk level or scan type.
+                </p>
+              </div>
 
-        {/* REPORT TABLE */}
+              <div className="flex w-full flex-col gap-3 sm:flex-row xl:w-auto">
+                <div className="relative w-full sm:min-w-[280px]">
+                  <Search
+                    size={18}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-[#92928A]"
+                  />
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search reports..."
+                    className="w-full rounded-xl border border-[#D5D2CA] bg-white py-3 pl-11 pr-4 text-sm font-medium !text-[#343532] caret-[#2F7D5A] outline-none transition placeholder:text-[#9A9A92] focus:border-[#8E8C85] selection:bg-[#DCEBE1] selection:text-[#343532]"
+                    style={{
+                      color: "#343532",
+                      WebkitTextFillColor: "#343532",
+                    }}
+                  />
+                </div>
 
-        <div className="mt-6 rounded-2xl border border-[#1A344C] bg-[#0B1B2B]/90">
-
-          {/* TOOLBAR */}
-
-          <div className="flex flex-col gap-4 border-b border-[#17344D] p-5 lg:flex-row lg:items-center lg:justify-between">
-
-            {/* SEARCH */}
-
-            <div className="relative w-full lg:max-w-md">
-
-              <Search
-                size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-[#607D94]"
-              />
-
-              <input
-                value={search}
-                onChange={(e) =>
-                  setSearch(e.target.value)
-                }
-                placeholder="Search reports..."
-                className="w-full rounded-xl border border-[#25445D] bg-[#081725] py-3 pl-11 pr-4 text-sm text-white outline-none focus:border-[#42B9FF]"
-              />
-
-            </div>
-
-            {/* FILTERS */}
-
-            <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-
-              {/* RISK FILTER */}
-
-              <div className="relative">
-
-                <Filter
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#607D94]"
-                />
-
-                <select
+                <SelectFilter
                   value={filter}
-                  onChange={(e) =>
-                    setFilter(e.target.value)
-                  }
-                  className="w-full appearance-none rounded-xl border border-[#25445D] bg-[#081725] py-3 pl-10 pr-10 text-sm text-[#C4D0DB] outline-none focus:border-[#42B9FF] sm:w-auto"
-                >
-                  <option value="All">
-                    All Risk Levels
-                  </option>
-
-                  <option value="Detected">
-                    Detected
-                  </option>
-
-                  <option value="Suspicious">
-                    Suspicious
-                  </option>
-
-                  <option value="Safe">
-                    Safe
-                  </option>
-                </select>
-
-                <ChevronDown
-                  size={16}
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#607D94]"
+                  onChange={setFilter}
+                  icon={<Filter size={15} />}
+                  options={["All", "Detected", "Suspicious", "Safe"]}
+                  labels={{
+                    All: "All Risk Levels",
+                    Detected: "Detected",
+                    Suspicious: "Suspicious",
+                    Safe: "Safe",
+                  }}
                 />
 
-              </div>
-
-              {/* TYPE FILTER */}
-
-              <div className="relative">
-
-                <select
+                <SelectFilter
                   value={typeFilter}
-                  onChange={(e) =>
-                    setTypeFilter(e.target.value)
-                  }
-                  className="w-full appearance-none rounded-xl border border-[#25445D] bg-[#081725] py-3 pl-4 pr-10 text-sm text-[#C4D0DB] outline-none focus:border-[#42B9FF] sm:w-auto"
-                >
-                  <option value="All">
-                    All Scan Types
-                  </option>
-
-                  <option value="URL">
-                    URL Scans
-                  </option>
-
-                  <option value="Message">
-                    Message Scans
-                  </option>
-                </select>
-
-                <ChevronDown
-                  size={16}
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#607D94]"
+                  onChange={setTypeFilter}
+                  options={["All", "URL", "Message"]}
+                  labels={{
+                    All: "All Scan Types",
+                    URL: "URL Scans",
+                    Message: "Message Scans",
+                  }}
                 />
-
               </div>
-
             </div>
-
           </div>
 
-          {/* LOADING */}
-
           {loading && (
-            <div className="p-12 text-center">
-
-              <p className="text-sm text-[#607D94]">
+            <div className="p-14 text-center">
+              <div className="inline-flex items-center gap-2 text-sm font-semibold text-[#706F68]">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-[#2F7D5A]" />
                 Loading threat reports...
-              </p>
-
+              </div>
             </div>
           )}
-
-          {/* ERROR */}
 
           {error && !loading && (
-            <div className="m-5 rounded-xl border border-[#5A202A] bg-[#2A1218] p-4">
-
-              <p className="text-sm text-[#FF4D5E]">
-                {error}
-              </p>
-
+            <div className="m-5 rounded-2xl border border-[#E8C9C9] bg-[#FFF7F7] p-4">
+              <p className="text-sm font-semibold text-[#A84C4C]">{error}</p>
             </div>
           )}
 
-          {/* TABLE */}
-
           {!loading && !error && (
-
-            <div
-              ref={tableScrollRef}
-              className="overflow-x-auto"
-            >
-
-              <table className="w-full min-w-[900px]">
-
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[980px]">
                 <thead>
-
-                  <tr className="border-b border-[#17344D] text-left">
-
-                    <th className="px-5 py-4 text-xs font-semibold text-[#607D94]">
-                      REPORT
+                  <tr className="border-b border-[#E7E5E0] bg-[#FAF9F7] text-left">
+                    <th className="px-5 py-4 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#85847D]">
+                      Report
                     </th>
-
-                    <th className="px-5 py-4 text-xs font-semibold text-[#607D94]">
-                      TYPE
+                    <th className="px-5 py-4 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#85847D]">
+                      Type
                     </th>
-
-                    <th className="px-5 py-4 text-xs font-semibold text-[#607D94]">
-                      CATEGORY
+                    <th className="px-5 py-4 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#85847D]">
+                      Category
                     </th>
-
-                    <th className="px-5 py-4 text-xs font-semibold text-[#607D94]">
-                      RISK
+                    <th className="px-5 py-4 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#85847D]">
+                      Risk
                     </th>
-
-                    <th className="px-5 py-4 text-xs font-semibold text-[#607D94]">
-                      STATUS
+                    <th className="px-5 py-4 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#85847D]">
+                      Status
                     </th>
-
-                    <th className="px-5 py-4 text-xs font-semibold text-[#607D94]">
-                      DATE
+                    <th className="px-5 py-4 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#85847D]">
+                      Date
                     </th>
-
-                    <th className="px-5 py-4 text-xs font-semibold text-[#607D94]">
-                      ACTION
+                    <th className="px-5 py-4 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#85847D]">
+                      Action
                     </th>
-
                   </tr>
-
                 </thead>
 
                 <tbody>
+                  {filteredReports.map((report) => (
+                    <tr
+                      key={report.id}
+                      className="border-b border-[#ECEAE5] transition hover:bg-[#FCFBF8]"
+                    >
+                      <td className="px-5 py-4">
+                        <p className="text-xs font-extrabold text-[#5B5B55]">
+                          {report.id}
+                        </p>
+                        <p className="mt-1 max-w-[250px] truncate text-sm font-semibold text-[#343532]">
+                          {report.target}
+                        </p>
+                      </td>
 
-                  {filteredReports.map(
-                    (report) => (
+                      <td className="px-5 py-4">
+                        <span className="rounded-lg bg-[#F0EFEB] px-3 py-1.5 text-xs font-extrabold text-[#66665F]">
+                          {report.type}
+                        </span>
+                      </td>
 
-                      <tr
-                        key={report.id}
-                        className="border-b border-[#142C42] transition hover:bg-[#102236]"
-                      >
+                      <td className="px-5 py-4">
+                        <span className="text-xs font-semibold text-[#6F6E67]">
+                          {report.category}
+                        </span>
+                      </td>
 
-                        {/* REPORT */}
+                      <td className="px-5 py-4">
+                        <RiskBadge score={report.risk} />
+                      </td>
 
-                        <td className="px-5 py-4">
+                      <td className="px-5 py-4">
+                        <StatusBadge status={report.status} />
+                      </td>
 
-                          <p className="text-xs font-bold text-[#42B9FF]">
-                            {report.id}
-                          </p>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2 text-xs font-medium text-[#77766F]">
+                          <Calendar size={14} />
+                          {report.date}
+                        </div>
+                      </td>
 
-                          <p className="mt-1 max-w-[230px] truncate text-sm text-[#C4D0DB]">
-                            {report.target}
-                          </p>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setSelectedReport(report)}
+                            className="inline-flex items-center gap-2 rounded-xl border border-[#D3D0C8] bg-white px-3 py-2 text-xs font-bold text-[#434341] transition hover:bg-[#F4F2ED]"
+                          >
+                            <Eye size={15} />
+                            View
+                          </button>
 
-                        </td>
-
-                        {/* TYPE */}
-
-                        <td className="px-5 py-4">
-
-                          <span className="rounded-lg border border-[#25445D] bg-[#081725] px-3 py-1.5 text-xs font-semibold text-[#A7BAC9]">
-                            {report.type}
-                          </span>
-
-                        </td>
-
-                        {/* CATEGORY */}
-
-                        <td className="px-5 py-4">
-
-                          <span className="text-xs text-[#A7BAC9]">
-                            {report.category}
-                          </span>
-
-                        </td>
-
-                        {/* RISK */}
-
-                        <td className="px-5 py-4">
-
-                          <RiskBadge
-                            score={report.risk}
-                          />
-
-                        </td>
-
-                        {/* STATUS */}
-
-                        <td className="px-5 py-4">
-
-                          <StatusBadge
-                            status={report.status}
-                          />
-
-                        </td>
-
-                        {/* DATE */}
-
-                        <td className="px-5 py-4">
-
-                          <div className="flex items-center gap-2 text-xs text-[#607D94]">
-
-                            <Calendar
-                              size={14}
-                            />
-
-                            {report.date}
-
-                          </div>
-
-                        </td>
-
-                        {/* ACTION */}
-
-                        <td className="px-5 py-4">
-
-                          <div className="flex items-center gap-2">
-
-                            <button
-                              onClick={() =>
-                                setSelectedReport(report)
-                              }
-                              className="flex items-center gap-2 rounded-lg border border-[#25445D] px-3 py-2 text-xs font-semibold text-[#A7BAC9] transition hover:border-[#42B9FF] hover:bg-[#102A43] hover:text-white"
-                            >
-                              <Eye size={15} />
-                              View
-                            </button>
-
-                            <button
-                              onClick={() =>
-                                downloadPDF(report)
-                              }
-                              className="flex items-center gap-2 rounded-lg border border-[#174D6E] bg-[#0D2B40] px-3 py-2 text-xs font-semibold text-[#42B9FF] transition hover:bg-[#102F47] hover:text-white"
-                            >
-                              <Download size={15} />
-                              PDF
-                            </button>
-
-                          </div>
-
-                        </td>
-
-                      </tr>
-
-                    )
-                  )}
-
+                          <button
+                            onClick={() => downloadPDF(report)}
+                            className="inline-flex items-center gap-2 rounded-xl bg-[#434341] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#343532]"
+                          >
+                            <Download size={15} />
+                            PDF
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
-
               </table>
 
-              {/* NO REPORTS */}
-
               {filteredReports.length === 0 && (
-
-                <div className="p-12 text-center">
-
-                  <Search
-                    size={30}
-                    className="mx-auto mb-3 text-[#526B82]"
-                  />
-
-                  <p className="font-semibold">
-                    No reports found
-                  </p>
-
-                  <p className="mt-1 text-xs text-[#607D94]">
+                <div className="px-6 py-14 text-center">
+                  <Search size={30} className="mx-auto text-[#A2A19A]" />
+                  <p className="mt-3 font-extrabold">No reports found</p>
+                  <p className="mt-1 text-xs text-[#7C7B74]">
                     Try changing your search or filter.
                   </p>
-
                 </div>
-
               )}
-
             </div>
-
           )}
-
-        </div>
+        </section>
 
         {/* DATABASE INFO */}
+        <section className="mt-5 flex items-start gap-3 rounded-2xl border border-[#CCDCD3] bg-[#F5F8F5] p-4">
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white">
+            <CheckCircle size={17} className="text-[#2F7D5A]" />
+          </div>
+          <div>
+            <p className="text-sm font-extrabold text-[#343532]">
+              Live database reports
+            </p>
+            <p className="mt-1 text-xs leading-5 text-[#6F7069]">
+              Reports are loaded from the protected backend database and
+              include results from URL and Message Scanner activity.
+            </p>
+          </div>
+        </section>
+      </main>
 
-        <div className="mt-5 flex items-center gap-3 rounded-xl border border-[#174D6E] bg-[#0D2B40] p-4">
+      {/* FOOTER */}
+      <footer className="mt-10 bg-[#434341] text-white">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
+                  <Shield size={17} />
+                </div>
+                <span className="font-extrabold">ScamGuard AI</span>
+              </div>
+              <p className="mt-2 max-w-md text-xs leading-5 text-white/65">
+                AI-assisted phishing and scam detection for safer digital
+                communication.
+              </p>
+            </div>
 
-          <CheckCircle
-            size={18}
-            className="shrink-0 text-[#32D583]"
-          />
+            <div className="flex flex-wrap gap-2">
+              {navItems.map(([id, label]) => (
+                <button
+                  key={id}
+                  onClick={() => onNavigate?.(id)}
+                  className="rounded-lg px-3 py-2 text-xs font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-          <p className="text-xs leading-5 text-[#8BA0B2]">
-            Reports are loaded from the backend
-            database and updated from URL and
-            Message Scanner results.
-          </p>
-
+          <div className="mt-6 border-t border-white/10 pt-4 text-xs text-white/45">
+            © {new Date().getFullYear()} ScamGuard AI. Security decisions are
+            assisted by machine learning and rule-based analysis.
+          </div>
         </div>
+      </footer>
 
-      </div>
-
-      {/* ==========================================
-          DETAIL MODAL
-      ========================================== */}
-
+      {/* DETAIL MODAL */}
       {selectedReport && (
-
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-
-          <div className="w-full max-w-2xl rounded-2xl border border-[#25445D] bg-[#091624] shadow-2xl">
-
-            {/* MODAL HEADER */}
-
-            <div className="flex items-center justify-between border-b border-[#17344D] p-5">
-
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#22231F]/45 p-4 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setSelectedReport(null);
+          }}
+        >
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-3xl border border-[#D4D1C9] bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#E5E3DE] p-5">
               <div>
-
-                <p className="text-xs text-[#607D94]">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#87867F]">
                   Threat Report
                 </p>
-
-                <h2 className="mt-1 text-lg font-bold">
+                <h2 className="mt-1 text-xl font-extrabold text-[#343532]">
                   {selectedReport.id}
                 </h2>
-
               </div>
 
               <button
-                onClick={() =>
-                  setSelectedReport(null)
-                }
-                className="rounded-lg p-2 text-[#607D94] hover:bg-[#102A43] hover:text-white"
+                onClick={() => setSelectedReport(null)}
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#79786F] transition hover:bg-[#F0EFEB] hover:text-[#343532]"
+                aria-label="Close"
               >
-
-                <XCircle size={20} />
-
+                <X size={18} />
               </button>
-
             </div>
 
-            {/* MODAL CONTENT */}
-
-            <div className="max-h-[75vh] space-y-5 overflow-y-auto p-5">
-
-              {/* BASIC DETAILS */}
-
-              <div>
-
+            <div className="max-h-[68vh] space-y-5 overflow-y-auto p-5">
+              <section>
                 <div className="mb-3 flex items-center gap-2">
-
-                  <ShieldAlert
-                    size={17}
-                    className="text-[#42B9FF]"
-                  />
-
-                  <h3 className="text-sm font-bold">
-                    Scan Details
-                  </h3>
-
+                  <ShieldAlert size={17} className="text-[#434341]" />
+                  <h3 className="text-sm font-extrabold">Scan Details</h3>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-
-                  <DetailRow
-                    label="Target"
-                    value={selectedReport.target}
-                  />
-
-                  <DetailRow
-                    label="Type"
-                    value={selectedReport.type}
-                  />
-
-                  <DetailRow
-                    label="Category"
-                    value={selectedReport.category}
-                  />
-
+                  <DetailRow label="Target" value={selectedReport.target} />
+                  <DetailRow label="Type" value={selectedReport.type} />
+                  <DetailRow label="Category" value={selectedReport.category} />
                   <DetailRow
                     label="Risk Score"
                     value={`${selectedReport.risk} / 100`}
                   />
-
-                  <DetailRow
-                    label="Status"
-                    value={selectedReport.status}
-                  />
-
+                  <DetailRow label="Status" value={selectedReport.status} />
                   <DetailRow
                     label="Detection Confidence"
                     value={`${selectedReport.confidence}%`}
                   />
-
-                  <DetailRow
-                    label="Detected"
-                    value={selectedReport.date}
-                  />
-
+                  <DetailRow label="Detected" value={selectedReport.date} />
                 </div>
+              </section>
 
-              </div>
-
-              {/* AI / ML ANALYSIS */}
-
-              <div className="rounded-xl border border-[#174D6E] bg-[#0A2437] p-4">
-
+              <section className="rounded-2xl bg-[#434341] p-4 text-white">
                 <div className="mb-4 flex items-center gap-2">
-
-                  <Brain
-                    size={18}
-                    className="text-[#42B9FF]"
-                  />
-
+                  <Brain size={18} />
                   <div>
-
-                    <h3 className="text-sm font-bold">
-                      AI / ML Analysis
-                    </h3>
-
-                    <p className="text-[10px] text-[#607D94]">
+                    <h3 className="text-sm font-extrabold">AI / ML Analysis</h3>
+                    <p className="text-[10px] text-white/60">
                       Machine learning prediction
                     </p>
-
                   </div>
-
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-
-                  <div className="rounded-lg border border-[#17344D] bg-[#081725] p-3">
-
-                    <p className="text-[10px] uppercase tracking-wide text-[#607D94]">
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                    <p className="text-[10px] uppercase tracking-wide text-white/50">
                       Prediction
                     </p>
-
                     <p
-                      className={`mt-2 text-lg font-bold uppercase ${
-                        selectedReport.prediction ===
-                        "phishing"
-                          ? "text-[#FF4D5E]"
-                          : selectedReport.prediction ===
-                            "spam"
-                          ? "text-[#FF9F43]"
-                          : "text-[#32D583]"
+                      className={`mt-2 text-lg font-extrabold uppercase ${
+                        selectedReport.prediction === "phishing"
+                          ? "text-[#FFB0B0]"
+                          : selectedReport.prediction === "spam"
+                          ? "text-[#E8C9A9]"
+                          : "text-[#B9E0CC]"
                       }`}
                     >
-                      {selectedReport.prediction ||
-                        "Not available"}
+                      {selectedReport.prediction || "Not available"}
                     </p>
-
                   </div>
 
-                  <div className="rounded-lg border border-[#17344D] bg-[#081725] p-3">
-
-                    <p className="text-[10px] uppercase tracking-wide text-[#607D94]">
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                    <p className="text-[10px] uppercase tracking-wide text-white/50">
                       ML Confidence
                     </p>
-
-                    <p className="mt-2 text-lg font-bold text-[#42B9FF]">
+                    <p className="mt-2 text-lg font-extrabold">
                       {selectedReport.confidence}%
                     </p>
-
                   </div>
-
                 </div>
-
-              </div>
-
-              {/* URL FEATURES */}
+              </section>
 
               {selectedReport.type === "URL" &&
                 selectedReport.features?.length > 0 && (
-
-                <div className="rounded-xl border border-[#1A344C] bg-[#0B1B2B]">
-
-                  <div className="flex items-center gap-2 border-b border-[#17344D] p-4">
-
-                    <BarChart3
-                      size={17}
-                      className="text-[#42B9FF]"
-                    />
-
-                    <div>
-
-                      <h3 className="text-sm font-bold">
-                        URL Feature Analysis
-                      </h3>
-
-                      <p className="text-[10px] text-[#607D94]">
-                        Features extracted for ML classification
-                      </p>
-
+                  <section className="rounded-2xl border border-[#D9D6CF] bg-[#FAF9F7]">
+                    <div className="flex items-center gap-2 border-b border-[#E2E0DB] p-4">
+                      <BarChart3 size={17} className="text-[#434341]" />
+                      <div>
+                        <h3 className="text-sm font-extrabold">
+                          URL Feature Analysis
+                        </h3>
+                        <p className="text-[10px] text-[#85847D]">
+                          Features extracted for ML classification
+                        </p>
+                      </div>
                     </div>
 
-                  </div>
-
-                  <div className="grid gap-2 p-4 sm:grid-cols-2">
-
-                    {featureNames.map(
-                      (name, index) => {
-
-                        const value =
-                          selectedReport
-                            .features[index];
+                    <div className="grid gap-2 p-4 sm:grid-cols-2">
+                      {featureNames.map((name, index) => {
+                        const value = selectedReport.features[index];
 
                         return (
                           <div
                             key={name}
-                            className="flex items-center justify-between rounded-lg border border-[#17344D] bg-[#081725] px-3 py-2.5"
+                            className="flex items-center justify-between rounded-xl border border-[#E0DED8] bg-white px-3 py-2.5"
                           >
-
-                            <span className="text-xs text-[#8BA0B2]">
+                            <span className="text-xs font-medium text-[#77766F]">
                               {name}
                             </span>
-
-                            <span className="ml-3 text-xs font-bold text-[#C4D0DB]">
+                            <span className="ml-3 text-xs font-extrabold text-[#434341]">
                               {value !== undefined
-                                ? formatFeatureValue(
-                                    name,
-                                    value
-                                  )
+                                ? formatFeatureValue(name, value)
                                 : "-"}
                             </span>
-
                           </div>
                         );
-                      }
-                    )}
-
-                  </div>
-
-                </div>
-              )}
-
-              {/* DETECTION FINDINGS */}
+                      })}
+                    </div>
+                  </section>
+                )}
 
               {selectedReport.reasons?.length > 0 && (
-
-                <div>
-
+                <section>
                   <div className="mb-3 flex items-center gap-2">
-
-                    <AlertTriangle
-                      size={17}
-                      className="text-[#FF9F43]"
-                    />
-
-                    <p className="text-sm font-bold">
+                    <AlertTriangle size={17} className="text-[#8A7358]" />
+                    <p className="text-sm font-extrabold">
                       Detection Findings
                     </p>
-
                   </div>
 
                   <div className="space-y-2">
-
-                    {selectedReport.reasons.map(
-                      (reason, index) => (
-
-                        <div
-                          key={index}
-                          className="rounded-lg border border-[#17344D] bg-[#081725] p-3 text-sm text-[#C4D0DB]"
-                        >
-                          <span className="mr-2 text-[#42B9FF]">
-                            •
-                          </span>
-
-                          {reason}
-
-                        </div>
-
-                      )
-                    )}
-
+                    {selectedReport.reasons.map((reason, index) => (
+                      <div
+                        key={index}
+                        className="rounded-xl border border-[#DEDCD6] bg-[#FAF9F7] p-3 text-sm text-[#595952]"
+                      >
+                        <span className="mr-2 font-extrabold text-[#2F7D5A]">
+                          •
+                        </span>
+                        {reason}
+                      </div>
+                    ))}
                   </div>
-
-                </div>
-
+                </section>
               )}
-
             </div>
 
-            {/* MODAL FOOTER */}
-
-            <div className="border-t border-[#17344D] p-5">
-
+            <div className="border-t border-[#E5E3DE] p-5">
               <div className="flex flex-col gap-3 sm:flex-row">
-
                 <button
-                  onClick={() =>
-                    downloadPDF(selectedReport)
-                  }
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#174D6E] bg-[#0D2B40] py-3 font-bold text-[#42B9FF] hover:bg-[#102F47]"
+                  onClick={() => downloadPDF(selectedReport)}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#434341] py-3 text-sm font-extrabold text-white transition hover:bg-[#343532]"
                 >
                   <Download size={18} />
                   Download PDF Report
                 </button>
 
                 <button
-                  onClick={() =>
-                    setSelectedReport(null)
-                  }
-                  className="flex-1 rounded-xl bg-[#FF9F43] py-3 font-bold text-[#17100A] hover:bg-[#FFB66B]"
+                  onClick={() => setSelectedReport(null)}
+                  className="flex-1 rounded-xl border border-[#D3D0C8] bg-white py-3 text-sm font-extrabold text-[#434341] transition hover:bg-[#F4F2ED]"
                 >
                   Close Report
                 </button>
-
               </div>
-
             </div>
-
           </div>
-
         </div>
+      )}
+    </div>
+  );
+}
 
+function SelectFilter({ value, onChange, icon, options, labels }) {
+  return (
+    <div className="relative w-full sm:w-auto">
+      {icon && (
+        <span className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-[#8C8B84]">
+          {icon}
+        </span>
       )}
 
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`w-full appearance-none rounded-xl border border-[#D5D2CA] bg-white py-3 pr-10 text-sm font-semibold !text-[#4B4B46] outline-none transition focus:border-[#8E8C85] sm:w-auto ${
+          icon ? "pl-9" : "pl-4"
+        }`}
+        style={{ color: "#4B4B46" }}
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {labels[option] || option}
+          </option>
+        ))}
+      </select>
+
+      <ChevronDown
+        size={16}
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8C8B84]"
+      />
     </div>
   );
 }
 
-// =========================================================
-// SUMMARY CARD
-// =========================================================
-
-function SummaryCard({
-  title,
-  value,
-  icon,
-  type,
-}) {
+function SummaryCard({ title, value, icon, tone }) {
   const styles = {
-    blue: "bg-[#0D2B40] text-[#42B9FF]",
-    red: "bg-[#3A1720] text-[#FF4D5E]",
-    orange: "bg-[#392514] text-[#FF9F43]",
-    green: "bg-[#0B3028] text-[#32D583]",
+    charcoal: {
+      icon: "bg-[#F0EFEB] text-[#434341]",
+      value: "text-[#343532]",
+    },
+    red: {
+      icon: "bg-[#F1E7E6] text-[#8B4D47]",
+      value: "text-[#8B4D47]",
+    },
+    warm: {
+      icon: "bg-[#F2EDE6] text-[#8A7358]",
+      value: "text-[#665846]",
+    },
+    green: {
+      icon: "bg-[#EAF4EE] text-[#2F7D5A]",
+      value: "text-[#2F7D5A]",
+    },
   };
 
+  const active = styles[tone] || styles.charcoal;
+
   return (
-    <div className="rounded-xl border border-[#1A344C] bg-[#0B1B2B]/90 p-5">
-
+    <div className="rounded-2xl border border-[#D4D1C9] bg-white p-5 shadow-[0_8px_25px_rgba(47,48,47,0.035)]">
       <div className="flex items-center justify-between">
-
         <div>
-
-          <p className="text-xs text-[#607D94]">
+          <p className="text-xs font-bold uppercase tracking-[0.1em] text-[#85847D]">
             {title}
           </p>
-
-          <p className="mt-2 text-2xl font-bold">
+          <p className={`mt-2 text-3xl font-extrabold ${active.value}`}>
             {value}
           </p>
-
         </div>
-
-        <div
-          className={`rounded-lg p-3 ${styles[type]}`}
-        >
-          {icon}
-        </div>
-
+        <div className={`rounded-xl p-3 ${active.icon}`}>{icon}</div>
       </div>
-
     </div>
   );
 }
 
-// =========================================================
-// RISK BADGE
-// =========================================================
-
 function RiskBadge({ score }) {
-
   if (score >= 60) {
     return (
-      <span className="rounded-lg bg-[#3A1720] px-3 py-1.5 text-xs font-bold text-[#FF4D5E]">
+      <span className="rounded-lg bg-[#F1E7E6] px-3 py-1.5 text-xs font-extrabold text-[#8B4D47]">
         HIGH · {score}
       </span>
     );
@@ -1248,79 +884,55 @@ function RiskBadge({ score }) {
 
   if (score >= 30) {
     return (
-      <span className="rounded-lg bg-[#392514] px-3 py-1.5 text-xs font-bold text-[#FF9F43]">
+      <span className="rounded-lg bg-[#F2EDE6] px-3 py-1.5 text-xs font-extrabold text-[#8A7358]">
         MEDIUM · {score}
       </span>
     );
   }
 
   return (
-    <span className="rounded-lg bg-[#0B3028] px-3 py-1.5 text-xs font-bold text-[#32D583]">
+    <span className="rounded-lg bg-[#EAF4EE] px-3 py-1.5 text-xs font-extrabold text-[#2F7D5A]">
       LOW · {score}
     </span>
   );
 }
 
-// =========================================================
-// STATUS BADGE
-// =========================================================
-
 function StatusBadge({ status }) {
-
   if (status === "Detected") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#3A1720] px-3 py-1.5 text-xs font-bold text-[#FF4D5E]">
-
+      <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#F1E7E6] px-3 py-1.5 text-xs font-extrabold text-[#8B4D47]">
         <ShieldAlert size={13} />
-
         Detected
-
       </span>
     );
   }
 
   if (status === "Suspicious") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#392514] px-3 py-1.5 text-xs font-bold text-[#FF9F43]">
-
+      <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#F2EDE6] px-3 py-1.5 text-xs font-extrabold text-[#8A7358]">
         <AlertTriangle size={13} />
-
         Suspicious
-
       </span>
     );
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#0B3028] px-3 py-1.5 text-xs font-bold text-[#32D583]">
-
+    <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#EAF4EE] px-3 py-1.5 text-xs font-extrabold text-[#2F7D5A]">
       <CheckCircle size={13} />
-
       Safe
-
     </span>
   );
 }
 
-// =========================================================
-// DETAIL ROW
-// =========================================================
-
-function DetailRow({
-  label,
-  value,
-}) {
+function DetailRow({ label, value }) {
   return (
     <div>
-
-      <p className="mb-1 text-xs text-[#607D94]">
+      <p className="mb-1.5 text-xs font-bold uppercase tracking-[0.08em] text-[#85847D]">
         {label}
       </p>
-
-      <p className="break-words rounded-lg border border-[#17344D] bg-[#081725] p-3 text-sm text-[#C4D0DB]">
+      <p className="break-words rounded-xl border border-[#DEDCD6] bg-[#FAF9F7] p-3 text-sm font-semibold text-[#4B4B46]">
         {value}
       </p>
-
     </div>
   );
 }

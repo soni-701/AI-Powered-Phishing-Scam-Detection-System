@@ -43,10 +43,8 @@ function App() {
 
   const navigate = (nextPage) => {
     const publicPages = ["login", "register"];
-
     const token = localStorage.getItem("token");
 
-    // If user is not logged in, allow only login/register
     if (!token && !publicPages.includes(nextPage)) {
       window.history.pushState(
         { page: "login" },
@@ -59,19 +57,6 @@ function App() {
       return;
     }
 
-    // Login/register navigation
-    if (publicPages.includes(nextPage)) {
-      window.history.pushState(
-        { page: nextPage },
-        "",
-        window.location.pathname
-      );
-
-      setPage(nextPage);
-      return;
-    }
-
-    // Protected page navigation
     window.history.pushState(
       { page: nextPage },
       "",
@@ -102,7 +87,9 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent">
+    <div className="min-h-screen bg-[#EDECE7]">
+
+      {/* LOGIN */}
 
       {!isLoggedIn && page === "login" && (
         <Login
@@ -111,9 +98,15 @@ function App() {
         />
       )}
 
+      {/* REGISTER */}
+
       {!isLoggedIn && page === "register" && (
-        <Register onNavigate={navigate} />
+        <Register
+          onNavigate={navigate}
+        />
       )}
+
+      {/* HOME */}
 
       {isLoggedIn && page === "home" && (
         <Home
@@ -122,29 +115,53 @@ function App() {
         />
       )}
 
+      {/* URL SCANNER */}
+
       {isLoggedIn && page === "url-scanner" && (
-        <URLScanner onNavigate={navigate} />
+        <URLScanner
+          onNavigate={navigate}
+        />
       )}
+
+      {/* MESSAGE SCANNER */}
 
       {isLoggedIn && page === "message-scanner" && (
-        <MessageScanner onNavigate={navigate} />
+        <MessageScanner
+          onNavigate={navigate}
+        />
       )}
+
+      {/* ANALYTICS */}
 
       {isLoggedIn && page === "analytics" && (
-        <Analytics onNavigate={navigate} />
+        <Analytics
+          onNavigate={navigate}
+        />
       )}
+
+      {/* THREAT REPORTS */}
 
       {isLoggedIn && page === "threat-reports" && (
-        <ThreatReports onNavigate={navigate} />
+        <ThreatReports
+          onNavigate={navigate}
+        />
       )}
+
+      {/* USERS */}
 
       {isLoggedIn && page === "users" && (
-        <Users onNavigate={navigate} />
+        <Users
+          onNavigate={navigate}
+        />
       )}
 
+      {/* SETTINGS */}
+
       {isLoggedIn && page === "settings" && (
-        <Settings onNavigate={navigate} 
-        onLogout={handleLogout}/>
+        <Settings
+          onNavigate={navigate}
+          onLogout={handleLogout}
+        />
       )}
 
     </div>

@@ -1,12 +1,13 @@
 import { useState } from "react";
 import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  Lock,
+  Mail,
   ShieldCheck,
   User,
-  Mail,
-  Lock,
   UserPlus,
-  AlertCircle,
-  CheckCircle,
 } from "lucide-react";
 
 function Register({ onNavigate }) {
@@ -21,10 +22,10 @@ function Register({ onNavigate }) {
   const [success, setSuccess] = useState("");
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
+    setFormData((previous) => ({
+      ...previous,
       [e.target.name]: e.target.value,
-    });
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -35,23 +36,18 @@ function Register({ onNavigate }) {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/auth/register",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.message || "Registration failed."
-        );
+        throw new Error(data.message || "Registration failed.");
       }
 
       setSuccess(
@@ -64,226 +60,234 @@ function Register({ onNavigate }) {
         password: "",
       });
 
-      setTimeout(() => {
+      window.setTimeout(() => {
         onNavigate("login");
       }, 1500);
     } catch (error) {
-      setError(error.message);
+      setError(error.message || "Registration failed.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-black/40">
+    <div className="min-h-screen bg-[#EDECE7] text-[#2F302F]">
+      <div className="mx-auto grid min-h-screen max-w-7xl lg:grid-cols-2">
+        {/* BRAND PANEL */}
+        <section className="hidden bg-[#434341] px-10 py-10 text-white lg:flex lg:flex-col lg:justify-between xl:px-16">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
+                <ShieldCheck size={23} />
+              </div>
+              <span className="text-lg font-extrabold tracking-tight">
+                ScamGuard AI
+              </span>
+            </div>
 
-      <div className="w-full max-w-md">
+            <div className="mt-24 max-w-xl">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/55">
+                Start Secure
+              </p>
 
-        {/* Logo */}
-        <div className="text-center mb-8">
+              <h1 className="mt-4 text-5xl font-extrabold leading-[1.05] tracking-tight xl:text-6xl">
+                Build a safer digital workflow with AI-powered threat
+                detection.
+              </h1>
 
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-400/30 mb-4">
-            <ShieldCheck
-              size={36}
-              className="text-cyan-400"
-            />
+              <p className="mt-6 max-w-lg text-base leading-7 text-white/65">
+                Create your account to access phishing and scam detection,
+                analytics, threat reports, and security tools from one
+                dashboard.
+              </p>
+            </div>
           </div>
 
-          <h1 className="text-3xl font-bold text-white">
-            AI Phishing Detector
-          </h1>
-
-          <p className="text-gray-400 mt-2">
-            Create your secure detection account
-          </p>
-
-        </div>
-
-        {/* Register Card */}
-        <div className="bg-slate-950/80 backdrop-blur-md border border-cyan-400/20 rounded-2xl p-7 shadow-2xl">
-
-          <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-white">
-              Create Account
-            </h2>
-
-            <p className="text-gray-400 text-sm mt-1">
-              Register to access the dashboard
-            </p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <SecurityPoint text="Secure account" />
+            <SecurityPoint text="AI detection" />
+            <SecurityPoint text="Threat analytics" />
           </div>
+        </section>
 
-          {/* Error */}
-          {error && (
-            <div className="flex items-start gap-3 p-3 mb-5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400">
-
-              <AlertCircle
-                size={20}
-                className="mt-0.5 shrink-0"
-              />
-
-              <p className="text-sm">
-                {error}
-              </p>
-
-            </div>
-          )}
-
-          {/* Success */}
-          {success && (
-            <div className="flex items-start gap-3 p-3 mb-5 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400">
-
-              <CheckCircle
-                size={20}
-                className="mt-0.5 shrink-0"
-              />
-
-              <p className="text-sm">
-                {success}
-              </p>
-
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit}>
-
-            {/* Name */}
-            <div className="mb-5">
-
-              <label className="block text-sm text-gray-300 mb-2">
-                Full Name
-              </label>
-
-              <div className="relative">
-
-                <User
-                  size={19}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-                />
-
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Enter your name"
-                  required
-                  className="w-full bg-slate-900/80 border border-slate-700 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 outline-none focus:border-cyan-400 transition"
-                />
-
+        {/* REGISTER PANEL */}
+        <main className="flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 lg:px-12 xl:px-20">
+          <div className="w-full max-w-md">
+            <div className="mb-8 text-center lg:text-left">
+              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#D4D1C9] bg-white lg:mx-0">
+                <ShieldCheck size={28} className="text-[#434341]" />
               </div>
 
-            </div>
-
-            {/* Email */}
-            <div className="mb-5">
-
-              <label className="block text-sm text-gray-300 mb-2">
-                Email Address
-              </label>
-
-              <div className="relative">
-
-                <Mail
-                  size={19}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-                />
-
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Enter your email"
-                  required
-                  className="w-full bg-slate-900/80 border border-slate-700 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 outline-none focus:border-cyan-400 transition"
-                />
-
-              </div>
-
-            </div>
-
-            {/* Password */}
-            <div className="mb-6">
-
-              <label className="block text-sm text-gray-300 mb-2">
-                Password
-              </label>
-
-              <div className="relative">
-
-                <Lock
-                  size={19}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-                />
-
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Create a password"
-                  required
-                  minLength={6}
-                  className="w-full bg-slate-900/80 border border-slate-700 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 outline-none focus:border-cyan-400 transition"
-                />
-
-              </div>
-
-              <p className="text-xs text-gray-500 mt-2">
-                Password must contain at least 6 characters.
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#85847D]">
+                Secure Registration
               </p>
 
+              <h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
+                Create your account
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-[#6B6B66]">
+                Register to access the ScamGuard AI security dashboard.
+              </p>
             </div>
 
-            {/* Register Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-400 disabled:bg-cyan-700 disabled:cursor-not-allowed text-black font-semibold py-3 rounded-lg transition"
-            >
+            <div className="rounded-3xl border border-[#D4D1C9] bg-white p-6 shadow-[0_18px_50px_rgba(47,48,47,0.08)] sm:p-8">
+              {error && (
+                <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[#E7CCCC] bg-[#FFF6F6] p-4 text-[#A64F4F]">
+                  <AlertCircle size={19} className="mt-0.5 shrink-0" />
+                  <p className="text-sm font-semibold leading-5">{error}</p>
+                </div>
+              )}
 
-              <UserPlus size={19} />
+              {success && (
+                <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[#C9DDD1] bg-[#F1F8F3] p-4 text-[#2F7D5A]">
+                  <CheckCircle2 size={19} className="mt-0.5 shrink-0" />
+                  <p className="text-sm font-semibold leading-5">{success}</p>
+                </div>
+              )}
 
-              {loading
-                ? "Creating Account..."
-                : "Create Account"}
+              <form onSubmit={handleSubmit}>
+                <div className="mb-5">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-[#77766F]">
+                    Full Name
+                  </label>
 
-            </button>
+                  <div className="relative">
+                    <User
+                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-[#99988F]"
+                    />
 
-          </form>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="Enter your name"
+                      required
+                      className="w-full rounded-xl border border-[#D5D2CA] bg-white py-3.5 pl-11 pr-4 text-sm font-medium !text-[#343532] caret-[#2F7D5A] outline-none transition placeholder:text-[#A09F97] focus:border-[#8E8C85] focus:ring-4 focus:ring-[#434341]/5"
+                      style={{
+                        color: "#343532",
+                        WebkitTextFillColor: "#343532",
+                      }}
+                    />
+                  </div>
+                </div>
 
-          {/* Login */}
-          <div className="text-center mt-6">
+                <div className="mb-5">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-[#77766F]">
+                    Email Address
+                  </label>
 
-            <p className="text-gray-400 text-sm">
+                  <div className="relative">
+                    <Mail
+                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-[#99988F]"
+                    />
 
-              Already have an account?{" "}
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="you@example.com"
+                      required
+                      className="w-full rounded-xl border border-[#D5D2CA] bg-white py-3.5 pl-11 pr-4 text-sm font-medium !text-[#343532] caret-[#2F7D5A] outline-none transition placeholder:text-[#A09F97] focus:border-[#8E8C85] focus:ring-4 focus:ring-[#434341]/5"
+                      style={{
+                        color: "#343532",
+                        WebkitTextFillColor: "#343532",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-[#77766F]">
+                    Password
+                  </label>
+
+                  <div className="relative">
+                    <Lock
+                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-[#99988F]"
+                    />
+
+                    <input
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="Create a password"
+                      required
+                      minLength={6}
+                      className="w-full rounded-xl border border-[#D5D2CA] bg-white py-3.5 pl-11 pr-4 text-sm font-medium !text-[#343532] caret-[#2F7D5A] outline-none transition placeholder:text-[#A09F97] focus:border-[#8E8C85] focus:ring-4 focus:ring-[#434341]/5"
+                      style={{
+                        color: "#343532",
+                        WebkitTextFillColor: "#343532",
+                      }}
+                    />
+                  </div>
+
+                  <p className="mt-2 text-xs text-[#85847D]">
+                    Password must contain at least 6 characters.
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#434341] py-3.5 text-sm font-extrabold text-white transition hover:bg-[#343532] disabled:cursor-not-allowed disabled:opacity-55"
+                >
+                  <UserPlus size={18} />
+                  {loading ? "Creating Account..." : "Create Account"}
+                  {!loading && (
+                    <ArrowRight
+                      size={17}
+                      className="transition-transform group-hover:translate-x-0.5"
+                    />
+                  )}
+                </button>
+              </form>
+
+              <div className="my-6 flex items-center gap-3">
+                <div className="h-px flex-1 bg-[#E5E3DE]" />
+                <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#9A9991]">
+                  Already registered?
+                </span>
+                <div className="h-px flex-1 bg-[#E5E3DE]" />
+              </div>
 
               <button
                 type="button"
                 onClick={() => onNavigate("login")}
-                className="text-cyan-400 hover:text-cyan-300 font-medium"
+                className="w-full rounded-xl border border-[#D4D1C9] bg-[#FAF9F7] py-3 text-sm font-extrabold text-[#434341] transition hover:bg-[#F1EFEB]"
               >
-                Login
+                Back to Login
               </button>
+            </div>
 
+            <div className="mt-5 flex items-center justify-center gap-2 text-xs font-medium text-[#87867F]">
+              <CheckCircle2 size={15} className="text-[#2F7D5A]" />
+              Your password is securely encrypted before storage.
+            </div>
+
+            <p className="mt-3 text-center text-[11px] leading-5 text-[#9A9991]">
+              © {new Date().getFullYear()} ScamGuard AI
             </p>
-
           </div>
-
-        </div>
-
-        {/* Security */}
-        <div className="text-center mt-6">
-
-          <p className="text-xs text-gray-500">
-            Your password is securely encrypted before storage.
-          </p>
-
-        </div>
-
+        </main>
       </div>
+    </div>
+  );
+}
 
+function SecurityPoint({ text }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+      <div className="mb-2 flex h-7 w-7 items-center justify-center rounded-lg bg-white/10">
+        <CheckCircle2 size={15} />
+      </div>
+      <p className="text-xs font-semibold text-white/75">{text}</p>
     </div>
   );
 }
