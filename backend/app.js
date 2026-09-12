@@ -15,6 +15,18 @@ const app = express();
 // CORS
 // =========================================
 
+// =========================================
+// CORS
+// =========================================
+
+const allowedOrigins = [
+  "https://ai-powered-phishing-scam-detection-pink.vercel.app",
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:5173",
+];
+
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -24,17 +36,11 @@ app.use(
         return callback(null, true);
       }
 
-      const isLocalhost =
-        /^http:\/\/localhost:\d+$/.test(origin) ||
-        /^http:\/\/127\.0\.0\.1:\d+$/.test(origin);
-
-      if (isLocalhost) {
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      return callback(
-        new Error("CORS origin not allowed.")
-      );
+      return callback(new Error("CORS origin not allowed."));
     },
 
     methods: [
@@ -51,7 +57,6 @@ app.use(
     ],
   })
 );
-
 // =========================================
 // SECURITY
 // =========================================
