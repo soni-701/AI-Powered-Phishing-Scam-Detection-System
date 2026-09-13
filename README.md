@@ -1,148 +1,149 @@
-AI-Powered Phishing & Scam Detection System
+<div align="center">
 
-An AI-powered full-stack security platform that detects phishing URLs and scam/spam messages using machine learning and rule-based security analysis.
+# 🛡️ AI-Powered Phishing & Scam Detection System
 
-The system provides risk scoring, prediction confidence, detection reasons, scan history, analytics, and downloadable threat reports.
+**A full-stack AI security platform for detecting phishing URLs and scam/spam messages.**
 
-Overview
+[![React](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Build-Vite-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+[![Node.js](https://img.shields.io/badge/Backend-Node.js-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/API-Express-000000?logo=express&logoColor=white)](https://expressjs.com/)
+[![Python](https://img.shields.io/badge/ML-Python-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 
-Phishing and scam attacks often use malicious URLs and deceptive messages to trick users into interacting with harmful content.
+</div>
 
-This project provides a web-based security platform where users can:
+## Overview
 
-Scan URLs for phishing indicators
+The AI-Powered Phishing & Scam Detection System is a web application that analyzes suspicious URLs and messages using a combination of machine learning and rule-based security checks.
 
-Scan messages for scam and spam indicators
+It provides:
 
-View risk scores and prediction confidence
+URL phishing detection
 
-Understand why an input was classified as risky
+Message spam/scam detection
 
-Review previous scans
+Risk scoring and confidence analysis
 
-View security analytics
+Threat history and detailed reports
 
-Export threat reports as CSV
+Analytics and ML evaluation
 
-Download detailed PDF reports
+CSV and PDF report generation
 
-Manage account and security settings
+JWT-based authentication and protected APIs
 
-Key Features
+Screenshots
 
-URL Phishing Detection
+<div align="center">
 
-HTTP and HTTPS URL validation
+Home Dashboard
 
-Extraction of 18 lexical URL features
+<img src="home_1.png" alt="Home Dashboard" width="90%"/>
 
-Random Forest based phishing classification
+URL Scanner
 
-Rule-based security analysis
+<img src="url.png" alt="URL Scanner" width="90%"/>
 
-Trusted-domain protection
+Message Scanner
 
-Risk score from 0 to 100
+<img src="message.png" alt="Message Scanner" width="90%"/>
 
-Final security decision: SAFE, SUSPICIOUS, or HIGH RISK
+</div>
 
-ML prediction and confidence
+How It Works
 
-Detailed URL feature extraction
+URL / Message
+      ↓
+Input Validation
+      ↓
+Machine Learning Analysis
+      +
+Rule-Based Security Checks
+      ↓
+Risk Score + Confidence
+      ↓
+Final Security Decision
+      ↓
+MongoDB
+      ↓
+Analytics + Threat Reports
 
-Message Scam Detection
+The system uses separate services for the application, API, and machine learning layer.
 
-Message validation
+Core Features
 
-TF-IDF text vectorization
+🔗 URL Phishing Detection
 
-Logistic Regression classification
+Validates HTTP/HTTPS URLs
 
-Rule-based analysis
+Extracts 18 URL features
 
-Risk scoring
+Uses a Random Forest classifier
 
-Spam/Ham prediction
+Applies rule-based detection
 
-Prediction confidence
+Includes trusted-domain protection
 
-Detection findings and reasons
+Produces a 0–100 risk score
 
-Analytics
+Returns SAFE, SUSPICIOUS, or HIGH RISK
+
+Displays model prediction and confidence
+
+💬 Message Scam Detection
+
+Validates submitted messages
+
+Converts text using TF-IDF
+
+Uses Logistic Regression
+
+Applies rule-based checks
+
+Generates risk score and confidence
+
+Shows detection reasons
+
+📊 Analytics
 
 Total scans
 
-URL scan statistics
+URL and message statistics
 
-Message scan statistics
-
-Safe, suspicious, and high-risk distribution
+Risk distribution
 
 Threat categories
 
-Recent threat activity
+Recent activity
 
-Daily detection activity
+Daily scan activity
 
 ML prediction distribution
 
-Model evaluation information
+Model evaluation data
 
-Database summary
+📄 Threat Reports
 
-Threat Reports
+Searchable scan history
 
-Complete scan history
+Risk and type filters
 
-Search and filtering
-
-URL and message report details
+Detailed scan information
 
 Detection findings
 
 ML prediction details
 
-URL feature analysis
+URL feature information
 
 CSV export
 
 PDF report generation
 
-User Management
+🔐 Authentication & Security
 
-Registered user list
-
-User search
-
-Status filtering
-
-Role filtering UI
-
-User profile view
-
-The current application uses the User role. Admin and Analyst role-based access control are planned as future improvements.
-
-Settings
-
-Account information
-
-Security preferences
-
-Threat alerts
-
-Security notifications
-
-Email alerts
-
-Automatic URL scanning preference
-
-Change password
-
-Detection engine information
-
-Logout
-
-Authentication and Security
+User registration and login
 
 JWT authentication
 
@@ -156,265 +157,220 @@ CORS protection
 
 Helmet security headers
 
-JSON request-size limits
+Request size limits
 
 Input validation
 
-Centralized error handling
+⚙️ Settings & User Management
 
-System Architecture
+Account information
 
-                         +--------------------------+
-                         |      React Frontend      |
-                         |      Vite + Tailwind     |
-                         +------------+-------------+
-                                      |
-                                  REST API
-                                      |
-                                      v
-                         +--------------------------+
-                         |     Node.js Backend      |
-                         |       Express + JWT      |
-                         +-----------+------+-------+
-                                     |      |
-                         +-----------+      +----------------+
-                         |                                 |
-                         v                                 v
-                +------------------+             +------------------+
-                |   MongoDB Atlas  |             |   Python ML API  |
-                |   Users + Scans  |             | Flask + ML       |
-                +------------------+             +--------+---------+
-                                                         |
-                                      +------------------+------------------+
-                                      |                                     |
-                                      v                                     v
-                              SMS Spam Model                       URL Phishing Model
-                              TF-IDF + Logistic                  Random Forest
-                              Regression
+Security preferences
 
-Detection Flow
+Threat notifications
 
-User Input
-    |
-    +--------------------+
-    |                    |
-   URL                Message
-    |                    |
-    v                    v
-Feature Extraction     TF-IDF
-    |                    |
-    v                    v
-URL ML Model       Message ML Model
-    |                    |
-    +---------+----------+
-              |
-              v
-      Rule-Based Analysis
-              |
-              v
-          Risk Score
-              |
-              v
-   Final Security Decision
-              |
-              v
-       Save Scan in MongoDB
-              |
-        +-----+------+
-        |            |
-        v            v
-    Analytics    Threat Reports
+Password change
 
-Technology Stack
+User search and profile view
 
-Frontend
+Secure logout
 
-React
-
-Vite
-
-JavaScript / JSX
-
-Tailwind CSS
-
-Lucide React
-
-Backend
-
-Node.js
-
-Express.js
-
-MongoDB
-
-Mongoose
-
-JWT
-
-bcryptjs
-
-Axios
-
-Helmet
-
-CORS
-
-express-rate-limit
-
-PDFKit
+The current application uses the User role. Admin and Analyst role-based access control are planned future improvements.
 
 Machine Learning
 
-Python
-
-Flask
-
-Flask-CORS
-
-Scikit-learn
-
-Joblib
-
-TF-IDF
-
-Logistic Regression
-
-Random Forest
-
-Machine Learning Models
-
 SMS Spam Detection
 
-Pipeline:
+Pipeline
 
 Message
-   |
-   v
+   ↓
 TF-IDF Vectorization
-   |
-   v
+   ↓
 Logistic Regression
-   |
-   v
+   ↓
 Spam / Ham
 
-The trained model and vectorizer are stored as:
+Model artifacts
 
 spam_model.pkl
+
 tfidf_vectorizer.pkl
 
-Reported held-out model accuracy: 97.40%
+Reported held-out accuracy: 97.40%
 
 URL Phishing Detection
 
-Pipeline:
+Pipeline
 
 URL
- |
- v
+ ↓
 18 Feature Extraction
- |
- v
+ ↓
 Random Forest
- |
- v
+ ↓
 Legitimate / Phishing
 
-The trained URL model is stored as:
+Model artifact
 
 url_phishing_model.pkl
 
-Reported held-out model accuracy: 99.57%
+Reported held-out accuracy: 99.57%
 
 URL Features
 
+#
+
+Feature
+
+1
+
 URL Length
+
+2
 
 Hostname Length
 
+3
+
 Path Length
+
+4
 
 Dot Count
 
+5
+
 Hyphen Count
+
+6
 
 Slash Count
 
+7
+
 Question Mark Count
+
+8
 
 Equal Sign Count
 
+9
+
 At Symbol Count
+
+10
 
 Percent Count
 
+11
+
 HTTPS
+
+12
 
 HTTP
 
+13
+
 IP Address
+
+14
 
 Suspicious Word Count
 
+15
+
 Subdomain Count
+
+16
 
 Digit Count
 
+17
+
 Letter Count
 
+18
+
 Shortened URL
+
+Technology Stack
+
+Layer
+
+Technologies
+
+Frontend
+
+React, Vite, JavaScript, Tailwind CSS, Lucide React
+
+Backend
+
+Node.js, Express, Mongoose, JWT, bcryptjs, Axios
+
+Security
+
+Helmet, CORS, express-rate-limit
+
+Database
+
+MongoDB Atlas
+
+ML Service
+
+Python, Flask, Scikit-learn, Joblib
+
+ML Models
+
+TF-IDF + Logistic Regression, Random Forest
+
+Reporting
+
+PDFKit, CSV export
+
+Deployment
+
+Vercel, Render, MongoDB Atlas
 
 Project Structure
 
 AI-Powered-Phishing-Scam-Detection-System/
-|
-+-- frontend/
-|   +-- src/
-|   |   +-- pages/
-|   |   |   +-- Home.jsx
-|   |   |   +-- URLScanner.jsx
-|   |   |   +-- MessageScanner.jsx
-|   |   |   +-- Analytics.jsx
-|   |   |   +-- ThreatReports.jsx
-|   |   |   +-- Users.jsx
-|   |   |   +-- Settings.jsx
-|   |   |   +-- Login.jsx
-|   |   |   +-- Register.jsx
-|   |   +-- api.js
-|   |   +-- App.jsx
-|   +-- package.json
-|   +-- ...
-|
-+-- backend/
-|   +-- config/
-|   +-- controllers/
-|   +-- middleware/
-|   +-- models/
-|   +-- routes/
-|   +-- services/
-|   +-- utils/
-|   +-- app.js
-|   +-- server.js
-|   +-- package.json
-|   +-- ...
-|
-+-- ml-service/
-|   +-- app.py
-|   +-- url_model.py
-|   +-- train_model.py
-|   +-- train_url_model.py
-|   +-- requirements.txt
-|   +-- spam_model.pkl
-|   +-- tfidf_vectorizer.pkl
-|   +-- url_phishing_model.pkl
-|   +-- ...
-|
-+-- README.md
-+-- home_1.png
-+-- message.png
-+-- url.png
+├── frontend/
+│   ├── src/
+│   │   ├── pages/
+│   │   ├── api.js
+│   │   └── App.jsx
+│   └── package.json
+│
+├── backend/
+│   ├── config/
+│   ├── controllers/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
+│   ├── services/
+│   ├── utils/
+│   ├── app.js
+│   ├── server.js
+│   └── package.json
+│
+├── ml-service/
+│   ├── app.py
+│   ├── url_model.py
+│   ├── train_model.py
+│   ├── train_url_model.py
+│   ├── requirements.txt
+│   ├── spam_model.pkl
+│   ├── tfidf_vectorizer.pkl
+│   └── url_phishing_model.pkl
+│
+├── home_1.png
+├── url.png
+├── message.png
+└── README.md
 
-API Endpoints
+API
 
 Authentication
 
@@ -422,21 +378,15 @@ POST /api/auth/register
 POST /api/auth/login
 PUT  /api/auth/change-password
 
-URL Scanner
+Scanning
 
 POST /api/scan/url
-
-Message Scanner
-
 POST /api/scan/message
 
-Threat Reports
+Reports & Analytics
 
 GET /api/reports
 GET /api/reports/:scanId/pdf
-
-Analytics
-
 GET /api/analytics
 
 Users
@@ -444,182 +394,128 @@ Users
 GET /api/users
 PUT /api/users/profile
 
-Health Check
+Health
 
 GET /api/health
 
-Local Installation
+Run Locally
 
-1. Clone the repository
+1. Clone
 
 git clone https://github.com/soni-701/AI-Powered-Phishing-Scam-Detection-System.git
 cd AI-Powered-Phishing-Scam-Detection-System
 
-2. Install frontend dependencies
+2. Frontend
 
 cd frontend
 npm install
+npm run dev
 
-3. Install backend dependencies
+3. Backend
 
-cd ../backend
+cd backend
 npm install
+npm start
 
-4. Install ML dependencies
+4. ML Service
 
-cd ../ml-service
+cd ml-service
 pip install -r requirements.txt
+python app.py
+
+Run the three services separately.
 
 Environment Variables
 
-Backend
-
-Create:
-
-backend/.env
-
-Use:
+Backend — backend/.env
 
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
 ML_SERVICE_URL=http://localhost:8000
 
-Frontend
-
-Create:
-
-frontend/.env
-
-Use:
+Frontend — frontend/.env
 
 VITE_API_URL=http://localhost:5000
 
-Never commit real database credentials, JWT secrets, or other private keys to GitHub.
-
-Run Locally
-
-Run the three services separately.
-
-1. ML Service
-
-cd ml-service
-python app.py
-
-Local ML API:
-
-http://localhost:8000
-
-2. Backend
-
-cd backend
-npm start
-
-Local backend:
-
-http://localhost:5000
-
-3. Frontend
-
-cd frontend
-npm run dev
-
-Open the Vite URL shown in the terminal.
-
-Production Build
-
-cd frontend
-npm run build
-
-The production build is generated in:
-
-frontend/dist
+Never commit real credentials or secrets to GitHub.
 
 Deployment
 
-The production architecture uses:
+The production setup uses:
 
-Frontend    -> Vercel
-Backend     -> Render
-ML Service  -> Render
-Database    -> MongoDB Atlas
+Vercel
+  ↓
+React Frontend
+  ↓
+Render Node/Express Backend
+  ↓
+MongoDB Atlas
 
-Current backend service
+Render Flask ML Service
+  ↑
+Node/Express Backend
+
+Deployed Services
+
+Backend
 
 https://ai-powered-phishing-scam-detection.onrender.com
 
-Current ML service
+ML Service
 
 https://ai-powered-phishing-scam-detection-system.onrender.com
 
-Screenshots
+Security Notes
 
-The screenshots below are stored in the repository root.
+The application includes multiple defensive layers:
 
-Home Dashboard
-
-
-
-URL Scanner
-
-
-
-Message Scanner
-
-
-
-Security
-
-The application implements:
-
-JWT-based authentication
+Authentication with JWT
 
 Password hashing
 
-Protected API endpoints
+Protected routes
 
-Request rate limiting
+Rate limiting
 
 CORS restrictions
 
 Helmet security headers
 
-Request body-size limits
-
 Input validation
 
-Centralized error handling
+Request-size protection
 
 Environment-based secret management
+
+ML + rule-based detection
 
 Future Improvements
 
 Admin and Analyst role-based access control
 
-Larger and more diverse training datasets
+Real-time threat intelligence
 
-Improved URL model accuracy
+Larger training datasets
 
-Real-time threat intelligence integration
+Continuous model retraining
 
 Email phishing detection
 
 Browser extension
 
-Continuous model retraining
+Advanced audit logs
 
 Automated security notifications
 
-Advanced audit logging
-
 Disclaimer
 
-This system is an AI-assisted security tool. Detection results should be treated as an additional security signal and not as a guarantee that a URL or message is completely safe or malicious.
+This project is an AI-assisted security tool. Detection results should be treated as an additional security signal and not as a guarantee that a URL or message is completely safe or malicious.
 
 Author
 
 Soni Yadav
 
-GitHub: https://github.com/soni-701
+GitHub: soni-701
 
-Repository: https://github.com/soni-701/AI-Powered-Phishing-Scam-Detection-System
+Repository: AI-Powered-Phishing-Scam-Detection-System
