@@ -1,128 +1,3 @@
-this page com
-
-Yes. I made a ready-to-paste README.md with the project details already filled in, so you do not need to manually update placeholders.
-
-I also changed the Screenshots section to use only your three files:
-
-docs/screenshots/home_1.png
-docs/screenshots/message.png
-docs/screenshots/url.png
-Download the final README
-
-Download README.md
-
-Your GitHub folder should look like this
-AI-Powered-Phishing-Scam-Detection-System/
-│
-├── frontend/
-├── backend/
-├── ml-service/
-├── docs/
-│   └── screenshots/
-│       ├── home_1.png
-│       ├── message.png
-│       └── url.png
-│
-└── README.md
-Then upload everything
-
-From your project root:
-
-git add README.md docs/screenshots
-git commit -m "Add complete project README and screenshots"
-git push origin main
-
-After GitHub updates, your README will automatically display those three screenshots. 
-
-README.md
-Document
-my folder structure is like this
-
-Yes — your current GitHub structure is:
-
-AI-Powered-Phishing-Scam-Detection-System/
-│
-├── backend/
-├── frontend/
-├── ml-service/
-├── README.md
-├── home_1.png
-├── message.png
-└── url.png
-
-So your screenshots are currently in the repository root, not inside docs/screenshots/.
-
-That means the README I gave you with:
-
-![Home Dashboard](docs/screenshots/home_1.png)
-
-will not display the images in your current structure.
-
-Easiest fix
-
-Since you already uploaded the three images, I recommend keeping them where they are and changing the README screenshot section to:
-
-## Screenshots
-
-### Home Dashboard
-
-![Home Dashboard](home_1.png)
-
-### URL Scanner
-
-![URL Scanner](url.png)
-
-### Message Scanner
-
-![Message Scanner](message.png)
-
-This matches your current GitHub structure exactly.
-
-So do not create another folder.
-
-Replace only the Screenshots section of your README with the above.
-
-Then:
-
-git add README.md
-git commit -m "Fix README screenshot paths"
-git push origin main
-
-After GitHub updates, the three screenshots should appear directly in your README.
-
-give update readme file
-
-Done. I updated the README so it matches your actual GitHub structure exactly:
-
-README.md
-home_1.png
-message.png
-url.png
-frontend/
-backend/
-ml-service/
-
-The screenshot links now use:
-
-![Home Dashboard](home_1.png)
-![URL Scanner](url.png)
-![Message Scanner](message.png)
-Download the updated file
-
-Download final README.md
-
-Replace your current GitHub README.md with this file, then commit it:
-
-git add README.md
-git commit -m "Update project README"
-git push origin main
-
-You do not need to move your three screenshots into another folder. 
-
-README_final.md
-Document
-
-README_final.md
 AI-Powered Phishing & Scam Detection System
 
 An AI-powered full-stack security platform that detects phishing URLs and scam/spam messages using machine learning and rule-based security analysis.
@@ -136,84 +11,159 @@ Phishing and scam attacks often use malicious URLs and deceptive messages to tri
 This project provides a web-based security platform where users can:
 
 Scan URLs for phishing indicators
+
 Scan messages for scam and spam indicators
+
 View risk scores and prediction confidence
+
 Understand why an input was classified as risky
+
 Review previous scans
+
 View security analytics
+
 Export threat reports as CSV
+
 Download detailed PDF reports
+
 Manage account and security settings
+
 Key Features
+
 URL Phishing Detection
+
 HTTP and HTTPS URL validation
+
 Extraction of 18 lexical URL features
+
 Random Forest based phishing classification
+
 Rule-based security analysis
+
 Trusted-domain protection
+
 Risk score from 0 to 100
+
 Final security decision: SAFE, SUSPICIOUS, or HIGH RISK
+
 ML prediction and confidence
+
 Detailed URL feature extraction
+
 Message Scam Detection
+
 Message validation
+
 TF-IDF text vectorization
+
 Logistic Regression classification
+
 Rule-based analysis
+
 Risk scoring
+
 Spam/Ham prediction
+
 Prediction confidence
+
 Detection findings and reasons
+
 Analytics
+
 Total scans
+
 URL scan statistics
+
 Message scan statistics
+
 Safe, suspicious, and high-risk distribution
+
 Threat categories
+
 Recent threat activity
+
 Daily detection activity
+
 ML prediction distribution
+
 Model evaluation information
+
 Database summary
+
 Threat Reports
+
 Complete scan history
+
 Search and filtering
+
 URL and message report details
+
 Detection findings
+
 ML prediction details
+
 URL feature analysis
+
 CSV export
+
 PDF report generation
+
 User Management
+
 Registered user list
+
 User search
+
 Status filtering
+
 Role filtering UI
+
 User profile view
 
 The current application uses the User role. Admin and Analyst role-based access control are planned as future improvements.
 
 Settings
+
 Account information
+
 Security preferences
+
 Threat alerts
+
 Security notifications
+
 Email alerts
+
 Automatic URL scanning preference
+
 Change password
+
 Detection engine information
+
 Logout
+
 Authentication and Security
+
 JWT authentication
+
 Password hashing with bcrypt
+
 Protected API routes
+
 Rate limiting
+
 CORS protection
+
 Helmet security headers
+
 JSON request-size limits
+
 Input validation
+
 Centralized error handling
+
 System Architecture
+
                          +--------------------------+
                          |      React Frontend      |
                          |      Vite + Tailwind     |
@@ -241,7 +191,9 @@ System Architecture
                               SMS Spam Model                       URL Phishing Model
                               TF-IDF + Logistic                  Random Forest
                               Regression
+
 Detection Flow
+
 User Input
     |
     +--------------------+
@@ -272,35 +224,65 @@ URL ML Model       Message ML Model
         |            |
         v            v
     Analytics    Threat Reports
+
 Technology Stack
+
 Frontend
+
 React
+
 Vite
+
 JavaScript / JSX
+
 Tailwind CSS
+
 Lucide React
+
 Backend
+
 Node.js
+
 Express.js
+
 MongoDB
+
 Mongoose
+
 JWT
+
 bcryptjs
+
 Axios
+
 Helmet
+
 CORS
+
 express-rate-limit
+
 PDFKit
+
 Machine Learning
+
 Python
+
 Flask
+
 Flask-CORS
+
 Scikit-learn
+
 Joblib
+
 TF-IDF
+
 Logistic Regression
+
 Random Forest
+
 Machine Learning Models
+
 SMS Spam Detection
 
 Pipeline:
@@ -345,25 +327,45 @@ url_phishing_model.pkl
 Reported held-out model accuracy: 99.57%
 
 URL Features
+
 URL Length
+
 Hostname Length
+
 Path Length
+
 Dot Count
+
 Hyphen Count
+
 Slash Count
+
 Question Mark Count
+
 Equal Sign Count
+
 At Symbol Count
+
 Percent Count
+
 HTTPS
+
 HTTP
+
 IP Address
+
 Suspicious Word Count
+
 Subdomain Count
+
 Digit Count
+
 Letter Count
+
 Shortened URL
+
 Project Structure
+
 AI-Powered-Phishing-Scam-Detection-System/
 |
 +-- frontend/
@@ -411,39 +413,65 @@ AI-Powered-Phishing-Scam-Detection-System/
 +-- home_1.png
 +-- message.png
 +-- url.png
+
 API Endpoints
+
 Authentication
+
 POST /api/auth/register
 POST /api/auth/login
 PUT  /api/auth/change-password
+
 URL Scanner
+
 POST /api/scan/url
+
 Message Scanner
+
 POST /api/scan/message
+
 Threat Reports
+
 GET /api/reports
 GET /api/reports/:scanId/pdf
+
 Analytics
+
 GET /api/analytics
+
 Users
+
 GET /api/users
 PUT /api/users/profile
+
 Health Check
+
 GET /api/health
+
 Local Installation
+
 1. Clone the repository
+
 git clone https://github.com/soni-701/AI-Powered-Phishing-Scam-Detection-System.git
 cd AI-Powered-Phishing-Scam-Detection-System
+
 2. Install frontend dependencies
+
 cd frontend
 npm install
+
 3. Install backend dependencies
+
 cd ../backend
 npm install
+
 4. Install ML dependencies
+
 cd ../ml-service
 pip install -r requirements.txt
+
 Environment Variables
+
 Backend
 
 Create:
@@ -456,6 +484,7 @@ PORT=5000
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
 ML_SERVICE_URL=http://localhost:8000
+
 Frontend
 
 Create:
@@ -473,32 +502,39 @@ Run Locally
 Run the three services separately.
 
 1. ML Service
+
 cd ml-service
 python app.py
 
 Local ML API:
 
 http://localhost:8000
+
 2. Backend
+
 cd backend
 npm start
 
 Local backend:
 
 http://localhost:5000
+
 3. Frontend
+
 cd frontend
 npm run dev
 
 Open the Vite URL shown in the terminal.
 
 Production Build
+
 cd frontend
 npm run build
 
 The production build is generated in:
 
 frontend/dist
+
 Deployment
 
 The production architecture uses:
@@ -507,10 +543,15 @@ Frontend    -> Vercel
 Backend     -> Render
 ML Service  -> Render
 Database    -> MongoDB Atlas
+
 Current backend service
+
 https://ai-powered-phishing-scam-detection.onrender.com
+
 Current ML service
+
 https://ai-powered-phishing-scam-detection-system.onrender.com
+
 Screenshots
 
 The screenshots below are stored in the repository root.
@@ -519,14 +560,11 @@ Home Dashboard
 
 
 
-
 URL Scanner
 
 
 
-
 Message Scanner
-
 
 
 
@@ -535,25 +573,45 @@ Security
 The application implements:
 
 JWT-based authentication
+
 Password hashing
+
 Protected API endpoints
+
 Request rate limiting
+
 CORS restrictions
+
 Helmet security headers
+
 Request body-size limits
+
 Input validation
+
 Centralized error handling
+
 Environment-based secret management
+
 Future Improvements
+
 Admin and Analyst role-based access control
+
 Larger and more diverse training datasets
+
 Improved URL model accuracy
+
 Real-time threat intelligence integration
+
 Email phishing detection
+
 Browser extension
+
 Continuous model retraining
+
 Automated security notifications
+
 Advanced audit logging
+
 Disclaimer
 
 This system is an AI-assisted security tool. Detection results should be treated as an additional security signal and not as a guarantee that a URL or message is completely safe or malicious.
